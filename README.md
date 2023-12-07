@@ -1,8 +1,32 @@
-# React + Vite
+# Dynamic Form Builder App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Live Site
 
-Currently, two official plugins are available:
+[Dynamic Form Builder](https://dynaamic-form-builder.netlify.app)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Vercel server Link
+
+[Dynamic Form Builder - server](https://form-builder-server-ten.vercel.app)
+
+### App Functionality
+
+- Add/Create Dynamic Form.
+- Custom input field added
+- Save form designed form
+- view single form by clicking on any form
+- Use saved form and submit to backend
+- view how many people use forms in applicant route
+
+### List of Technology & library
+
+- React js
+- Vite
+- Node js
+- ES6 javascript
+- Tailwind css
+- Daisy UI Component
+- Express js
+- MongoDB database
+- React Router Dom
+- Deploy UI in Netlify
+- Deploy Server in Vercel
