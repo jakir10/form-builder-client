@@ -1,11 +1,32 @@
-// import DynamicForm from "../Components/DynamicForm";
-// import NonLifeInsuranceForm from "./NonLifeInsuranceForm";
+import NonLifeInsuranceForm from "./NonLifeInsuranceForm";
+import { Link } from "react-router-dom"; // Import Link from react-router-dom for navigation
 
 const Home = () => {
   return (
-    <div>
-      {/* <DynamicForm /> */}
-      {/* <NonLifeInsuranceForm /> */}
+    <div className="bg-gray-100 min-h-screen">
+      {/* Hero Section */}
+      <div className="bg-blue-500 text-white py-12">
+        <div className="container mx-auto text-center">
+          <h1 className="text-4xl font-bold mb-4">
+            Build Your Custom Forms with Ease!
+          </h1>
+          <p className="text-lg">
+            Create personalized forms effortlessly using our dynamic form
+            builder.
+          </p>
+          <Link
+            to="/"
+            className="mt-4 bg-white text-blue-500 hover:bg-blue-100 py-2 px-4 rounded-full inline-block transition duration-300"
+          >
+            Get Started
+          </Link>
+        </div>
+      </div>
+
+      {/* Form Section */}
+      <div className="container mx-auto mt-8">
+        <NonLifeInsuranceForm />
+      </div>
     </div>
   );
 };

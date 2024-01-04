@@ -1,41 +1,83 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 const AllForms = () => {
-  const [forms, setForms] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchForms = async () => {
+    const fetchSubmissions = async () => {
       try {
         const response = await axios.get(
-          "https://form-builder-server-ten.vercel.app/forms"
+          "https://form-builder-server-ten.vercel.app/submits"
         );
-        setForms(response.data);
+        setSubmissions(response.data);
+        console.log(response);
       } catch (error) {
-        console.error("Error fetching forms:", error.message);
-        if (error.response) {
-          console.error("Error response data:", error.response.data);
-        }
+        console.error("Error fetching submissions:", error.message);
+        setError(error.message);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchForms();
+    fetchSubmissions();
   }, []);
 
+  const handleDelete = async (submissionId) => {
+    try {
+      // Send a DELETE request to your backend to delete the submission
+      await axios.delete(
+        `https://form-builder-server-ten.vercel.app/submits/${submissionId}`
+      );
+      // Update the state by removing the deleted submission
+      setSubmissions((prevSubmissions) =>
+        prevSubmissions.filter((submission) => submission._id !== submissionId)
+      );
+    } catch (error) {
+      console.error("Error deleting submission:", error.message);
+      setError(error.message);
+    }
+  };
+
+  if (loading) {
+    return <p>Loading submissions...</p>;
+  }
+
+  if (error) {
+    return <p>Error loading submissions: {error}</p>;
+  }
+
   return (
-    <div className="flex flex-wrap -mx-4">
-      {forms.map((form) => (
-        <Link
-          key={form._id}
-          to={`/forms/${form._id}`}
-          className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/4 px-4 mb-4"
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      {submissions.map((submission) => (
+        <div
+          key={submission._id}
+          className="bg-white rounded-lg overflow-hidden shadow-md transition-transform transform hover:scale-105 border-2"
         >
-          <div className="bg-white rounded-lg p-6 shadow-md">
-            <h3 className="text-lg font-semibold mb-2">{form.title}</h3>
-            <p className="text-gray-600">{form.description}</p>
+          <div className="p-6">
+            <h3 className="text-lg text-sky-500 font-semibold mb-2">
+              {submission.templateName} Form
+            </h3>
+            <p className="text-gray-600">{submission.description}</p>
           </div>
-        </Link>
+          <div className="flex items-center justify-between p-6 bg-gray-100">
+            <button
+              onClick={() => handleDelete(submission._id)}
+              className="btn-sm bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-4 rounded-full focus:outline-none focus:shadow-outline-red"
+            >
+              Delete
+            </button>
+            <Link
+              to={`/submits/${submission._id}`}
+              className="btn-sm bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-4 rounded-full focus:outline-none focus:shadow-outline-blue"
+            >
+              View Form
+            </Link>
+          </div>
+        </div>
       ))}
     </div>
   );

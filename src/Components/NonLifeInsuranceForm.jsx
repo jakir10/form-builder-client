@@ -1,184 +1,158 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
-const RomanNumerals = [
-  "I",
-  "II",
-  "III",
-  "IV",
-  "V",
-  "VI",
-  "VII",
-  "VIII",
-  "IX",
-  "X",
-];
-
-const Quarters = [
-  "Previous Year 2022",
-  "(Jan-Mar 2023 1st Q)",
-  "(April-June 2023 2nd Q)",
-  "(July-Sept 2023 3rd Q)",
-  "(Oct-Dec 2023 4th Q)",
-];
 
 const NonLifeInsuranceForm = () => {
-  const [insuranceName, setInsuranceName] = useState("");
-  const [tableData, setTableData] = useState(() => {
-    const storedData = localStorage.getItem("nonLifeInsuranceForm");
-    return storedData
-      ? JSON.parse(storedData)
-      : [
-          {
-            slNo: 1,
-            particulars: "",
-            elements: [],
-            unauditedColumns: Array(5).fill(""),
-          },
-        ];
+  const [form, setForm] = useState({
+    templateName: "",
+    headings: [],
+    rows: [],
   });
 
-  const [editMode, setEditMode] = useState(() => {
-    const storedEditMode = localStorage.getItem("nonLifeInsuranceEditMode");
-    return storedEditMode ? JSON.parse(storedEditMode) : true;
-  });
+  const [isAddHeadingModalOpen, setIsAddHeadingModalOpen] = useState(false);
+  const [newHeading, setNewHeading] = useState("");
 
-  useEffect(() => {
-    localStorage.setItem("nonLifeInsuranceForm", JSON.stringify(tableData));
-    localStorage.setItem("nonLifeInsuranceEditMode", JSON.stringify(editMode));
-  }, [tableData, editMode]);
+  const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] =
+    useState(false);
+  const [newTemplateName, setNewTemplateName] = useState("");
 
-  const addSLRow = () => {
-    setTableData((prevData) => [
-      ...prevData,
-      {
-        slNo: prevData.length + 1,
-        particulars: "",
-        elements: [],
-        unauditedColumns: Array(5).fill(""),
-      },
-    ]);
+  const [headingsAdded, setHeadingsAdded] = useState(false);
+  const [isTemplateCreated, setIsTemplateCreated] = useState(false);
+
+  const openAddHeadingModal = () => {
+    setIsAddHeadingModalOpen(true);
   };
 
-  const removeSLRow = (index) => {
-    setTableData((prevData) =>
-      prevData
-        .filter((_, i) => i !== index)
-        .map((row, i) => ({ ...row, slNo: i + 1 }))
-    );
+  const closeAddHeadingModal = () => {
+    setIsAddHeadingModalOpen(false);
+    setNewHeading("");
   };
 
-  const addRomanElement = (index) => {
-    setTableData((prevData) => {
-      const newData = [...prevData];
+  const openCreateTemplateModal = () => {
+    setIsCreateTemplateModalOpen(true);
+  };
 
-      if (newData[index].elements.length < RomanNumerals.length) {
-        newData[index].elements.push({
-          romanNumeral: RomanNumerals[newData[index].elements.length],
-          dataName: "",
-          unauditedColumns: Array(5).fill(""),
-        });
-      }
+  const closeCreateTemplateModal = () => {
+    setIsCreateTemplateModalOpen(false);
+    setNewTemplateName("");
+  };
 
-      return newData;
+  const addHeading = () => {
+    if (newHeading.trim() !== "") {
+      setForm((prevForm) => ({
+        ...prevForm,
+        headings: [...prevForm.headings, newHeading],
+      }));
+      closeAddHeadingModal();
+      setHeadingsAdded(true);
+    }
+  };
+
+  const createTemplate = () => {
+    if (newTemplateName.trim() !== "") {
+      setForm((prevForm) => ({
+        ...prevForm,
+        templateName: newTemplateName,
+      }));
+      closeCreateTemplateModal();
+      setIsTemplateCreated(true);
+    }
+  };
+
+  const addRow = () => {
+    setForm((prevForm) => {
+      const newRow = { "Sl No": prevForm.rows.length + 1 };
+      prevForm.headings.forEach((heading) => {
+        newRow[heading] = "";
+      });
+      return {
+        ...prevForm,
+        rows: [...prevForm.rows, newRow],
+      };
     });
   };
 
-  const removeElement = (rowIndex, elementIndex) => {
-    setTableData((prevData) => {
-      const newData = [...prevData];
-      newData[rowIndex].elements = newData[rowIndex].elements.filter(
-        (_, i) => i !== elementIndex
-      );
-      return newData;
+  const removeRow = (index) => {
+    setForm((prevForm) => {
+      const updatedRows = [...prevForm.rows];
+      updatedRows.splice(index, 1);
+      return { ...prevForm, rows: updatedRows };
     });
   };
 
-  const handleNameChange = (index, newName) => {
-    setTableData((prevData) => {
-      const newData = [...prevData];
-      newData[index].particulars = newName;
-      return newData;
+  // const addSubRow = (slNo) => {
+  //   setForm((prevForm) => {
+  //     const subRow = {
+  //       "Sl No": `(${getRomanNumeral(slNo)})`,
+  //     };
+  //     prevForm.headings.forEach((heading) => {
+  //       subRow[heading] = "";
+  //     });
+  //     const updatedRows = [...prevForm.rows];
+  //     updatedRows.splice(slNo, 0, subRow);
+  //     return { ...prevForm, rows: updatedRows };
+  //   });
+  // };
+
+  // const handleInputChange = (rowIndex, key, value) => {
+  //   setForm((prevForm) => {
+  //     const updatedRows = [...prevForm.rows];
+  //     updatedRows[rowIndex][key] = value;
+  //     return { ...prevForm, rows: updatedRows };
+  //   });
+  // };
+
+  const removeHeading = (index) => {
+    setForm((prevForm) => {
+      const updatedHeadings = [...prevForm.headings];
+      updatedHeadings.splice(index, 1);
+
+      // Remove the corresponding column from each row
+      const updatedRows = prevForm.rows.map((row) => {
+        const updatedRow = { ...row };
+        delete updatedRow[prevForm.headings[index]];
+        return updatedRow;
+      });
+
+      return { ...prevForm, headings: updatedHeadings, rows: updatedRows };
     });
   };
 
-  const handleElementChange = (index, elementIndex, newDataName) => {
-    setTableData((prevData) => {
-      const newData = [...prevData];
-      newData[index].elements[elementIndex].dataName = newDataName;
-      return newData;
-    });
-  };
-
-  const handleUnauditedColumnChange = (
-    rowIndex,
-    elementIndex,
-    columnIndex,
-    newValue
-  ) => {
-    setTableData((prevData) => {
-      const newData = [...prevData];
-      if (elementIndex !== undefined) {
-        newData[rowIndex].elements[elementIndex].unauditedColumns[columnIndex] =
-          newValue;
-      } else {
-        newData[rowIndex].unauditedColumns[columnIndex] = newValue;
-      }
-      return newData;
-    });
-  };
-
-  const handleInsuranceNameChange = (e) => {
-    setInsuranceName(e.target.value);
-  };
-
-  const handleSaveForm = () => {
-    setEditMode(false);
-  };
-
-  const handleEditForm = () => {
-    setEditMode(true);
-  };
+  // const getRomanNumeral = (number) => {
+  //   const romanNumerals = [
+  //     "i",
+  //     "ii",
+  //     "iii",
+  //     "iv",
+  //     "v",
+  //     "vi",
+  //     "vii",
+  //     "viii",
+  //     "ix",
+  //     "x",
+  //   ];
+  //   return romanNumerals[number - 1] || "";
+  // };
 
   const handleSubmitForm = async () => {
     try {
       // Handle form submission logic here
-      console.log("Form Submitted:", { insuranceName, tableData });
+      console.log("Form Submitted:", { form });
 
       // Your backend endpoint
-      // const endpoint = "http://localhost:5000/form-submit";
-
-      // Prepare the data to be sent
-      const formData = {
-        insuranceName,
-        tableData,
-      };
+      // const endpoint = "http://localhost:5000/submits";
+      const endpoint = "https://form-builder-server-ten.vercel.app/submits";
 
       // Make the HTTP POST request
-      const response = await axios.post(
-        // "http://localhost:5000/submits",
-        "https://form-builder-server-ten.vercel.app/submits",
-        formData
-      );
+      const response = await axios.post(endpoint, form);
 
       // Reset the state variables if the request was successful
       if (response.status === 200) {
-        setInsuranceName("");
-
-        setTableData((prevData) =>
-          prevData.map((row) => ({
-            ...row,
-            particulars: "",
-            elements: row.elements.map((element) => ({
-              ...element,
-              dataName: "",
-              unauditedColumns: Array(5).fill(""),
-            })),
-            unauditedColumns: Array(5).fill(""),
-          }))
-        );
-
-        // Set edit mode to true after submitting
-        setEditMode(true);
+        setForm({
+          templateName: "",
+          headings: [],
+          rows: [],
+        });
+        setIsTemplateCreated(false);
 
         console.log("Form data successfully submitted to the backend.");
       } else {
@@ -192,181 +166,218 @@ const NonLifeInsuranceForm = () => {
   };
 
   return (
-    <div className="container mx-auto mt-8">
-      <h1 className="text-xl text-center uppercase">
-        Format for non-life insurance
-      </h1>
-      <div className="text-center">
-        {editMode ? (
-          <>
-            Name of Insurance :{" "}
-            <input
-              value={insuranceName}
-              onChange={handleInsuranceNameChange}
-              className="border rounded px-1 py-1 text-sm border-blue-500"
-              type="text"
-              placeholder="Insurance Name"
-              readOnly={!editMode}
-            />
-          </>
-        ) : (
-          <p>
-            Insurance Name: <strong>{insuranceName}</strong>
-          </p>
-        )}
-      </div>
+    <div className="container mx-auto mt-8 p-4">
+      {!form.templateName && (
+        <div className="flex justify-start mb-4">
+          <button
+            type="button"
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+            onClick={openCreateTemplateModal}
+          >
+            Create Template
+          </button>
+        </div>
+      )}
 
-      <table className="min-w-full bg-white border border-gray-300">
-        <thead>
-          <tr>
-            <th className="py-2">Sl No</th>
-            <th className="py-2">Particulars</th>
-            {Quarters.map((quarter, index) => (
-              <th key={index} className="py-2">
-                {quarter}
-              </th>
-            ))}
-            <th className="py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {tableData.map((row, index) => (
-            <React.Fragment key={index}>
+      {form.templateName && (
+        <div>
+          <h2 className="text-3xl font-bold mb-4 text-center">
+            {form.templateName}
+          </h2>
+
+          {!headingsAdded && (
+            <div className="flex justify-start mb-4">
+              <button
+                type="button"
+                className="bg-blue-500 text-white px-4 py-2 rounded"
+                onClick={openAddHeadingModal}
+              >
+                Add Heading
+              </button>
+            </div>
+          )}
+
+          {headingsAdded && (
+            <div className="flex space-x-4 mb-4 items-center">
+              <div className="flex items-center space-x-2">
+                <span>Sl No</span>
+                <button type="button" className="text-red-500">
+                  &#10006;
+                </button>
+              </div>
+              {form.headings.map((heading, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <span>{heading}</span>
+                  <button
+                    type="button"
+                    className="text-red-500"
+                    onClick={() => removeHeading(index)}
+                  >
+                    &#10006;
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                className="bg-blue-500 text-white px-4 py-2 rounded"
+                onClick={openAddHeadingModal}
+              >
+                Add Heading
+              </button>
+            </div>
+          )}
+
+          <table className="w-full border">
+            <thead>
               <tr>
-                <td className="py-2">{row.slNo}</td>
-                <td className="py-2">
-                  <div>
-                    <input
-                      type="text"
-                      value={row.particulars}
-                      placeholder="add particulars"
-                      onChange={(e) => handleNameChange(index, e.target.value)}
-                      className="border rounded px-1 py-1 text-sm border-blue-500"
-                      readOnly={editMode}
-                    />
-                  </div>
-                </td>
-                {row.unauditedColumns.map((value, columnIndex) => (
-                  <td key={columnIndex} className="py-2 mt-0">
-                    <input
-                      type="text"
-                      value={value}
-                      placeholder={Quarters[columnIndex]}
-                      onChange={(e) =>
-                        handleUnauditedColumnChange(
-                          index,
-                          undefined,
-                          columnIndex,
-                          e.target.value
-                        )
-                      }
-                      className="border rounded px-1 py-1 text-sm border-blue-500"
-                      readOnly={editMode}
-                    />
-                  </td>
+                <th className="border px-4 py-2">Sl No</th>
+                {form.headings.map((heading, index) => (
+                  <th key={index} className="border px-4 py-2">
+                    {heading}
+                  </th>
                 ))}
-                <td className="py-2">
-                  <button
-                    onClick={() => addRomanElement(index)}
-                    className={`mt-1 bg-blue-500 text-white px-2 py-1 rounded text-xs ${
-                      editMode ? "" : "hidden"
-                    }`}
-                  >
-                    Add Element
-                  </button>
-                  <button
-                    onClick={() => removeSLRow(index)}
-                    className={`mt-1 bg-red-500 text-white px-2 py-1 rounded text-xs ${
-                      editMode ? "" : "hidden"
-                    }`}
-                  >
-                    Remove Row
-                  </button>
-                </td>
+                <th className="border px-4 py-2">Actions</th>
               </tr>
-              {row.elements.map((element, elemIndex) => (
-                <tr key={`${index}-${elemIndex}`}>
-                  <td className="py-2"></td>
-                  <td className="py-2">
-                    <div className="mb-2 mt-8" style={{ marginLeft: "10px" }}>
-                      {element.romanNumeral}:&nbsp;
-                      <input
-                        type="text"
-                        value={element.dataName}
-                        placeholder="add sub particulars"
-                        onChange={(e) =>
-                          handleElementChange(index, elemIndex, e.target.value)
-                        }
-                        className="border rounded px-1 py-1 text-sm border-blue-500"
-                        readOnly={editMode}
-                      />
-                      <button
-                        onClick={() => removeElement(index, elemIndex)}
-                        className={`ml-1 bg-red-500 text-white px-1 py-1 rounded text-xs ${
-                          editMode ? "" : "hidden"
-                        }`}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </td>
-                  {element.unauditedColumns.map((value, columnIndex) => (
-                    <td key={columnIndex} className="py-2">
-                      <input
-                        type="text"
-                        value={value}
-                        placeholder={Quarters[columnIndex]}
-                        onChange={(e) =>
-                          handleUnauditedColumnChange(
-                            index,
-                            elemIndex,
-                            columnIndex,
-                            e.target.value
-                          )
-                        }
-                        className="border rounded px-1 py-1 text-sm border-blue-500"
-                        readOnly={editMode}
-                      />
+            </thead>
+            <tbody>
+              {form.rows.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {Object.entries(row).map(([key, value], index) => (
+                    <td key={index} className="border px-4 py-2">
+                      {key === "Sl No" ? (
+                        value
+                      ) : (
+                        <input
+                          type="text"
+                          value={value}
+                          // onChange={(e) =>
+                          //   handleInputChange(rowIndex, key, e.target.value)
+                          // }
+                          placeholder={key}
+                          className="w-full"
+                          // disabled={onChange}
+                        />
+                      )}
                     </td>
                   ))}
+                  <td className="border px-4 py-2">
+                    <button
+                      type="button"
+                      className="bg-red-500 text-white px-2 py-1 rounded mr-2"
+                      onClick={() => removeRow(rowIndex)}
+                    >
+                      Remove Row
+                    </button>
+                    {/* {row["Sl No"] && (
+                      <button
+                        type="button"
+                        className="bg-green-500 text-white px-2 py-1 rounded"
+                        onClick={() => addSubRow(row["Sl No"])}
+                      >
+                        Add Sub Row
+                      </button>
+                    )} */}
+                  </td>
                 </tr>
               ))}
-            </React.Fragment>
-          ))}
-        </tbody>
-      </table>
-      <button
-        onClick={addSLRow}
-        className={`mt-2 bg-green-500 text-white px-2 py-1 rounded text-xs ${
-          editMode ? "" : "hidden"
-        }`}
-      >
-        Add Row
-      </button>
-      <button
-        onClick={handleSaveForm}
-        className={`mt-2 ml-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs ${
-          editMode ? "" : "hidden"
-        }`}
-      >
-        Save Form
-      </button>
-      <button
-        onClick={handleEditForm}
-        className={`mt-2 ml-2 bg-blue-500 text-white px-2 py-1 rounded text-xs ${
-          !editMode ? "" : "hidden"
-        }`}
-      >
-        Edit Form
-      </button>
-      <button
-        onClick={handleSubmitForm}
-        className={`mt-2 ml-2 bg-green-500 text-white px-2 py-1 rounded text-xs ${
-          !editMode ? "" : "hidden"
-        }`}
-      >
-        Submit Form
-      </button>
+            </tbody>
+          </table>
+
+          <div className="mt-4">
+            <button
+              type="button"
+              className="bg-green-500 text-white px-4 py-2 rounded"
+              onClick={addRow}
+            >
+              Add Row
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isAddHeadingModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-4 rounded w-96">
+            <label
+              htmlFor="newHeading"
+              className="block mb-2 text-lg font-bold"
+            >
+              New Heading:
+            </label>
+            <input
+              type="text"
+              id="newHeading"
+              value={newHeading}
+              onChange={(e) => setNewHeading(e.target.value)}
+              className="w-full mb-2 p-2 border rounded"
+            />
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                onClick={addHeading}
+              >
+                Add
+              </button>
+              <button
+                type="button"
+                className="bg-gray-500 text-white px-4 py-2 rounded"
+                onClick={closeAddHeadingModal}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isCreateTemplateModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-4 rounded w-96">
+            <label
+              htmlFor="newTemplateName"
+              className="block mb-2 text-lg font-bold"
+            >
+              New Template Name:
+            </label>
+            <input
+              type="text"
+              id="newTemplateName"
+              value={newTemplateName}
+              onChange={(e) => setNewTemplateName(e.target.value)}
+              className="w-full mb-2 p-2 border rounded"
+            />
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                onClick={createTemplate}
+              >
+                Create
+              </button>
+              <button
+                type="button"
+                className="bg-gray-500 text-white px-4 py-2 rounded"
+                onClick={closeCreateTemplateModal}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-end mb-4">
+        {isTemplateCreated && (
+          <button
+            type="button"
+            className="bg-green-500 text-white px-4 py-2 rounded"
+            onClick={handleSubmitForm}
+          >
+            Save Template
+          </button>
+        )}
+      </div>
     </div>
   );
 };

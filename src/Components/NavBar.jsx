@@ -10,7 +10,7 @@ const NavBar = () => {
         <Link to="/allForms">Forms</Link>
       </li>
       <li>
-        <Link to="/allApplications">Applicants</Link>
+        <Link to="/allApplications">Applications</Link>
       </li>
     </>
   );
@@ -41,7 +41,7 @@ const NavBar = () => {
             {Nav}
           </ul>
         </div>
-        <a className="btn btn-ghost text-xl">Form Builder</a>
+        {/* <a className="btn btn-ghost text-xl">Dynamic Form</a> */}
       </div>
       <div className="navbar-center hidden lg:flex">
         <ul className="menu menu-horizontal px-1">{Nav}</ul>

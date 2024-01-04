@@ -1,111 +1,444 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-// import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
 
 const SingleForm = () => {
   const { formId } = useParams();
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [inputValues, setInputValues] = useState({});
+  const [inputErrors, setInputErrors] = useState({});
+  const [editMode, setEditMode] = useState(false);
+  const [newHeading, setNewHeading] = useState("");
+  const [fileUploadError, setFileUploadError] = useState(null);
+  const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
-    const fetchFormData = async () => {
+    const fetchForm = async () => {
       try {
         const response = await axios.get(
-          `https://form-builder-server-ten.vercel.app/forms/${formId}`
+          `https://form-builder-server-ten.vercel.app/submits/${formId}`
         );
         setFormData(response.data);
+        initializeInputValues(response.data.headings);
       } catch (error) {
-        console.error("Error fetching form data:", error);
-        setError("Error fetching form data");
+        console.error("Error fetching form data:", error.message);
+        setError(error.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchFormData();
+    fetchForm();
   }, [formId]);
 
-  const handleInputChange = (labelIndex, event) => {
-    const updatedLabels = [...formData.labels];
-    updatedLabels[labelIndex].name = event.target.value;
-
-    setFormData({
-      ...formData,
-      labels: updatedLabels,
+  const initializeInputValues = (headings) => {
+    const initialInputValues = {};
+    headings.forEach((heading, index) => {
+      initialInputValues[`${heading}-${index}`] = "";
     });
+    setInputValues(initialInputValues);
+  };
+
+  const handleInputChange = (heading, value) => {
+    if (!editMode) {
+      setInputValues((prevValues) => ({
+        ...prevValues,
+        [heading]: value,
+      }));
+
+      // Check if the value is empty and set an error message
+      setInputErrors((prevErrors) => ({
+        ...prevErrors,
+        [heading]: value.trim() === "" ? "This field is required." : null,
+      }));
+    }
+  };
+
+  const handleTemplateNameChange = (e) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      templateName: e.target.value,
+    }));
   };
 
   const navigate = useNavigate();
 
-  const handleSubmit = async () => {
-    try {
-      const labelsData = formData.labels.map((label) => ({ name: label.name }));
+  // const handleSubmitForm = async () => {
+  //   try {
+  //     // Check if any input field is empty
+  //     if (Object.values(inputValues).some((value) => value.trim() === "")) {
+  //       // Display popup if there are errors
+  //       setShowPopup(true);
+  //       return;
+  //     }
 
-      await axios.post(
+  //     // Group input values by Sl No
+  //     const groupedInputValues = {};
+  //     Object.entries(inputValues).forEach(([key, value]) => {
+  //       const [heading, slNo] = key.split("-");
+  //       if (!groupedInputValues[slNo]) {
+  //         groupedInputValues[slNo] = { slNo };
+  //       }
+  //       groupedInputValues[slNo][heading] = value;
+  //     });
+
+  //     // Convert grouped input values to an array
+  //     const rows = Object.values(groupedInputValues);
+
+  //     const response = await axios.post("https://form-builder-server-ten.vercel.app/application", {
+  //       formId,
+  //       templateName: formData.templateName,
+  //       inputValues: {
+  //         headings: formData.headings,
+  //         rows,
+  //       },
+  //     });
+
+  //     console.log("Form submitted successfully:", response.data);
+
+  //     navigate("/allForms");
+  //   } catch (error) {
+  //     console.error("Error submitting form:", error.message);
+  //   }
+  // };
+
+  const handleSubmitForm = async () => {
+    try {
+      // Check if any input field is empty
+      if (Object.values(inputValues).some((value) => value.trim() === "")) {
+        // Display popup if there are errors
+        setShowPopup(true);
+        return;
+      }
+
+      // Group input values by Sl No
+      const groupedInputValues = {};
+      Object.entries(inputValues).forEach(([key, value]) => {
+        const [heading, slNo] = key.split("-");
+        if (!groupedInputValues[slNo]) {
+          groupedInputValues[slNo] = { slNo };
+        }
+        groupedInputValues[slNo][heading] = value;
+      });
+
+      // Convert grouped input values to an array
+      const rows = Object.values(groupedInputValues);
+
+      const response = await axios.post(
         "https://form-builder-server-ten.vercel.app/application",
         {
-          labels: labelsData,
+          formId,
+          templateName: formData.templateName,
+          inputValues: {
+            headings: formData.headings,
+            rows,
+          },
         }
       );
 
-      console.log(
-        "Form submitted successfully to https://form-builder-server-ten.vercel.app/application"
-      );
+      console.log("Form submitted successfully:", response.data);
 
-      // Clear form data after successful submission
-      setFormData({
-        ...formData,
-        labels: formData.labels.map((label) => ({ ...label, name: "" })),
-      });
-
-      navigate("/");
+      navigate("/allForms");
     } catch (error) {
-      console.error("Error submitting form data:", error);
+      console.error("Error submitting form:", error.message);
     }
   };
 
+  const addHeading = () => {
+    setFormData((prevData) => ({
+      ...prevData,
+      headings: [...prevData.headings, newHeading],
+    }));
+    setNewHeading("");
+  };
+
+  const addRow = () => {
+    setFormData((prevData) => ({
+      ...prevData,
+      rows: [...prevData.rows, { "Sl No": prevData.rows.length + 1 }],
+    }));
+  };
+
+  const removeRow = () => {
+    setFormData((prevData) => ({
+      ...prevData,
+      rows: prevData.rows.slice(0, -1),
+    }));
+  };
+
+  const removeHeading = (index) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      headings: prevData.headings.filter((_, i) => i !== index),
+    }));
+  };
+
+  const saveTemplate = async () => {
+    try {
+      const { _id: existingFormId, ...formDataWithoutId } = formData;
+
+      const response = await axios.post(
+        "https://form-builder-server-ten.vercel.app/submits",
+        formDataWithoutId
+      );
+
+      const newFormId = response.data.newFormId;
+      console.log("Template saved successfully with new form ID:", newFormId);
+
+      navigate(`/allForms`);
+    } catch (error) {
+      console.error("Error saving template:", error.message);
+    }
+  };
+
+  const updateTemplate = async () => {
+    try {
+      const { _id: existingFormId, ...formDataWithoutId } = formData;
+
+      const response = await axios.patch(
+        `https://form-builder-server-ten.vercel.app/submits/${existingFormId}`,
+        formDataWithoutId
+      );
+
+      console.log("Template updated successfully:", response.data);
+
+      navigate(`/allForms`);
+    } catch (error) {
+      console.error("Error updating template:", error.message);
+    }
+  };
+
+  const handleFileUploadAndUpdateForm = (file) => {
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+
+        const sheetName = workbook.SheetNames[0];
+        const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+        const excelHeadings = Object.keys(sheetData[0]);
+
+        setFormData((prevData) => ({
+          ...prevData,
+          headings: excelHeadings,
+          rows: sheetData,
+        }));
+
+        const initialInputValues = {};
+        sheetData.forEach((row, rowIndex) => {
+          excelHeadings.forEach((heading) => {
+            // Ensure that the row[heading] value is a string before using it
+            const cellValue =
+              row[heading] !== undefined ? String(row[heading]) : "";
+            initialInputValues[`${heading}-${rowIndex}`] = cellValue;
+          });
+        });
+        setInputValues(initialInputValues);
+
+        setFileUploadError(null);
+      } catch (error) {
+        console.error("Error processing Excel file:", error.message);
+        setFileUploadError("Error processing Excel file. Please try again.");
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+
+    if (!file) {
+      return;
+    }
+
+    handleFileUploadAndUpdateForm(file);
+  };
+
   if (loading) {
-    return <p>Loading...</p>;
+    return <p>Loading form...</p>;
   }
 
   if (error) {
-    return <p>{error}</p>;
+    return <p>Error loading form: {error}</p>;
   }
 
-  if (!formData) {
-    return <p>No data found for form with ID {formId}</p>;
-  }
+  const { headings, rows } = formData;
 
   return (
-    <div className="container mx-auto mt-8 p-8 bg-white shadow-lg rounded-md max-w-md">
-      <h2 className="text-2xl font-semibold mb-4">{formData.title}</h2>
-      <p className="text-gray-600 mb-4">{formData.description}</p>
+    <div className="container mx-auto mt-8 p-4">
+      <h2 className="text-3xl font-bold mb-4 text-center">
+        {editMode ? (
+          <input
+            type="text"
+            value={formData.templateName}
+            onChange={handleTemplateNameChange}
+            className="border rounded px-1 py-1 text-sm border-blue-500"
+          />
+        ) : (
+          formData.templateName
+        )}
+      </h2>
 
-      <form>
-        {formData.labels.map((label, index) => (
-          <div key={index} className="mb-4">
-            <label className="block text-sm font-medium text-gray-600">
-              Label {index + 1}:
-            </label>
+      <table className="w-full border mb-4">
+        <thead>
+          <tr>
+            <th className="px-4 py-2">Sl No</th>
+            {headings.map((heading, index) => (
+              <th key={index} className="px-4 py-2">
+                {heading}
+                {editMode && (
+                  <button
+                    type="button"
+                    className="ml-2 text-red-600"
+                    onClick={() => removeHeading(index)}
+                  >
+                    &#10005;
+                  </button>
+                )}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, rowIndex) => (
+            <tr key={rowIndex}>
+              <td className="px-4 py-2 text-center">{rowIndex + 1}</td>
+              {headings.map((heading, index) => (
+                <td key={index} className="px-4 py-2">
+                  <input
+                    type="text"
+                    value={inputValues[`${heading}-${rowIndex}`] || ""}
+                    placeholder={heading}
+                    className="w-full border rounded px-1 py-1 my-1 text-sm border-blue-500"
+                    onChange={(e) =>
+                      handleInputChange(
+                        `${heading}-${rowIndex}`,
+                        e.target.value
+                      )
+                    }
+                    readOnly={editMode}
+                  />
+                  {inputErrors[`${heading}-${rowIndex}`] && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {inputErrors[`${heading}-${rowIndex}`]}
+                    </p>
+                  )}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="mb-4 flex items-center justify-between">
+        {fileUploadError && <p className="text-red-500">{fileUploadError}</p>}
+        {!editMode && (
+          <div className="flex items-center">
+            <button
+              type="button"
+              className="bg-green-700 text-white px-4 py-2 rounded mr-2 hover:bg-green-600 text-white font-bold focus:outline-none focus:shadow-outline-blue"
+              onClick={() => document.getElementById("excelFileInput").click()}
+            >
+              Import Excel File
+            </button>
             <input
-              type="text"
-              className="mt-1 p-2 border rounded-md w-full"
-              value={label.name}
-              onChange={(e) => handleInputChange(index, e)}
+              id="excelFileInput"
+              type="file"
+              accept=".xls, .xlsx"
+              onChange={handleFileUpload}
+              className="hidden"
             />
           </div>
-        ))}
+        )}
+        <div className="flex">
+          {editMode && (
+            <div className="flex">
+              <input
+                type="text"
+                value={newHeading}
+                onChange={(e) => setNewHeading(e.target.value)}
+                placeholder="New Heading"
+                className="border rounded px-2 py-1 text-sm border-blue-500"
+              />
+              <button
+                type="button"
+                className="bg-blue-500 text-white px-4 py-2 rounded ml-2"
+                onClick={addHeading}
+              >
+                Add Heading
+              </button>
+              <button
+                type="button"
+                className="bg-blue-500 text-white px-4 py-2 rounded ml-2"
+                onClick={addRow}
+              >
+                Add Row
+              </button>
+              <button
+                type="button"
+                className="bg-green-500 text-white px-4 py-2 rounded ml-2"
+                onClick={saveTemplate}
+              >
+                Save Template
+              </button>
+              {/* update */}
+              <button
+                type="button"
+                className="bg-yellow-500 text-white px-4 py-2 rounded ml-2"
+                onClick={updateTemplate}
+              >
+                Update Template
+              </button>
+              <button
+                type="button"
+                className="bg-red-500 text-white px-4 py-2 rounded ml-2"
+                onClick={removeRow}
+              >
+                Remove Row
+              </button>
+            </div>
+          )}
+          <button
+            type="button"
+            className={`${
+              editMode ? "bg-yellow-500" : "bg-blue-500"
+            } text-white px-7 py-2  rounded ml-2 hover:bg-yellow-600 text-white font-bold focus:outline-none focus:shadow-outline-blue`}
+            onClick={() => setEditMode((prev) => !prev)}
+          >
+            {editMode ? "Cancel Edit" : "Edit"}
+          </button>
+          {!editMode && (
+            <button
+              type="button"
+              className="bg-blue-500 text-white px-4 py-2 rounded ml-2 hover:bg-blue-600 text-white font-bold focus:outline-none focus:shadow-outline-blue"
+              onClick={handleSubmitForm}
+            >
+              Submit
+            </button>
+          )}
+        </div>
+      </div>
 
-        <button
-          type="button"
-          onClick={handleSubmit}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring focus:border-blue-300"
-        >
-          Submit
-        </button>
-      </form>
+      {showPopup && (
+        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-4 rounded shadow-md">
+            <p className="text-red-500">Please fill in all required fields.</p>
+            <button
+              onClick={() => setShowPopup(false)}
+              className="bg-blue-500 text-white px-4 py-2 rounded mt-4"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
