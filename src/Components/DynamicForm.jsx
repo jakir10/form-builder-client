@@ -31,10 +31,7 @@ const DynamicForm = () => {
 
     try {
       // Send the form data to the server using Axios
-      await axios.post(
-        "https://form-builder-server-ten.vercel.app/forms",
-        form
-      );
+      await axios.post("http://localhost:5000/forms", form);
 
       // Optionally, you can reset the form after a successful submission
       setForm({ title: "", description: "", labels: [] });

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-import * as XLSX from "xlsx";
+// import * as XLSX from "xlsx";
 
 const SingleForm = () => {
   const { formId } = useParams();
@@ -12,14 +12,14 @@ const SingleForm = () => {
   const [inputErrors, setInputErrors] = useState({});
   const [editMode, setEditMode] = useState(false);
   const [newHeading, setNewHeading] = useState("");
-  const [fileUploadError, setFileUploadError] = useState(null);
+  // const [fileUploadError, setFileUploadError] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
     const fetchForm = async () => {
       try {
         const response = await axios.get(
-          `https://form-builder-server-ten.vercel.app/submits/${formId}`
+          `http://localhost:5000/submits/${formId}`
         );
         setFormData(response.data);
         initializeInputValues(response.data.headings);
@@ -66,45 +66,6 @@ const SingleForm = () => {
 
   const navigate = useNavigate();
 
-  // const handleSubmitForm = async () => {
-  //   try {
-  //     // Check if any input field is empty
-  //     if (Object.values(inputValues).some((value) => value.trim() === "")) {
-  //       // Display popup if there are errors
-  //       setShowPopup(true);
-  //       return;
-  //     }
-
-  //     // Group input values by Sl No
-  //     const groupedInputValues = {};
-  //     Object.entries(inputValues).forEach(([key, value]) => {
-  //       const [heading, slNo] = key.split("-");
-  //       if (!groupedInputValues[slNo]) {
-  //         groupedInputValues[slNo] = { slNo };
-  //       }
-  //       groupedInputValues[slNo][heading] = value;
-  //     });
-
-  //     // Convert grouped input values to an array
-  //     const rows = Object.values(groupedInputValues);
-
-  //     const response = await axios.post("https://form-builder-server-ten.vercel.app/application", {
-  //       formId,
-  //       templateName: formData.templateName,
-  //       inputValues: {
-  //         headings: formData.headings,
-  //         rows,
-  //       },
-  //     });
-
-  //     console.log("Form submitted successfully:", response.data);
-
-  //     navigate("/allForms");
-  //   } catch (error) {
-  //     console.error("Error submitting form:", error.message);
-  //   }
-  // };
-
   const handleSubmitForm = async () => {
     try {
       // Check if any input field is empty
@@ -127,17 +88,14 @@ const SingleForm = () => {
       // Convert grouped input values to an array
       const rows = Object.values(groupedInputValues);
 
-      const response = await axios.post(
-        "https://form-builder-server-ten.vercel.app/application",
-        {
-          formId,
-          templateName: formData.templateName,
-          inputValues: {
-            headings: formData.headings,
-            rows,
-          },
-        }
-      );
+      const response = await axios.post("http://localhost:5000/application", {
+        formId,
+        templateName: formData.templateName,
+        inputValues: {
+          headings: formData.headings,
+          rows,
+        },
+      });
 
       console.log("Form submitted successfully:", response.data);
 
@@ -181,7 +139,7 @@ const SingleForm = () => {
       const { _id: existingFormId, ...formDataWithoutId } = formData;
 
       const response = await axios.post(
-        "https://form-builder-server-ten.vercel.app/submits",
+        "http://localhost:5000/submits",
         formDataWithoutId
       );
 
@@ -199,7 +157,7 @@ const SingleForm = () => {
       const { _id: existingFormId, ...formDataWithoutId } = formData;
 
       const response = await axios.patch(
-        `https://form-builder-server-ten.vercel.app/submits/${existingFormId}`,
+        `http://localhost:5000/submits/${existingFormId}`,
         formDataWithoutId
       );
 
@@ -209,56 +167,6 @@ const SingleForm = () => {
     } catch (error) {
       console.error("Error updating template:", error.message);
     }
-  };
-
-  const handleFileUploadAndUpdateForm = (file) => {
-    const reader = new FileReader();
-
-    reader.onload = async (e) => {
-      try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
-
-        const sheetName = workbook.SheetNames[0];
-        const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-        const excelHeadings = Object.keys(sheetData[0]);
-
-        setFormData((prevData) => ({
-          ...prevData,
-          headings: excelHeadings,
-          rows: sheetData,
-        }));
-
-        const initialInputValues = {};
-        sheetData.forEach((row, rowIndex) => {
-          excelHeadings.forEach((heading) => {
-            // Ensure that the row[heading] value is a string before using it
-            const cellValue =
-              row[heading] !== undefined ? String(row[heading]) : "";
-            initialInputValues[`${heading}-${rowIndex}`] = cellValue;
-          });
-        });
-        setInputValues(initialInputValues);
-
-        setFileUploadError(null);
-      } catch (error) {
-        console.error("Error processing Excel file:", error.message);
-        setFileUploadError("Error processing Excel file. Please try again.");
-      }
-    };
-
-    reader.readAsArrayBuffer(file);
-  };
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-
-    if (!file) {
-      return;
-    }
-
-    handleFileUploadAndUpdateForm(file);
   };
 
   if (loading) {
@@ -338,25 +246,8 @@ const SingleForm = () => {
       </table>
 
       <div className="mb-4 flex items-center justify-between">
-        {fileUploadError && <p className="text-red-500">{fileUploadError}</p>}
-        {!editMode && (
-          <div className="flex items-center">
-            <button
-              type="button"
-              className="bg-green-700 text-white px-4 py-2 rounded mr-2 hover:bg-green-600 text-white font-bold focus:outline-none focus:shadow-outline-blue"
-              onClick={() => document.getElementById("excelFileInput").click()}
-            >
-              Import Excel File
-            </button>
-            <input
-              id="excelFileInput"
-              type="file"
-              accept=".xls, .xlsx"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-          </div>
-        )}
+        {<p className="text-red-500">{}</p>}
+
         <div className="flex">
           {editMode && (
             <div className="flex">

@@ -7,7 +7,7 @@ import SingleForm from "../Components/SingleForm";
 import Home from "../Components/Home";
 import AllApplications from "../Components/allApplications";
 import SingleApplication from "../Components/SingleApplications";
-import UpdateApplication from "../Components/UpdateApplication";
+// import UpdateApplication from "../Components/UpdateApplication";
 // import NonLifeInsuranceForm from "../Components/NonLifeInsuranceForm";
 
 const router = createBrowserRouter([
@@ -34,9 +34,9 @@ const router = createBrowserRouter([
         element: <SingleForm />,
         loader: ({ params }) =>
           fetch(
-            // `https://form-builder-server-ten.vercel.app/forms/${params.formId}`
-            // `https://form-builder-server-ten.vercel.app/forms/${params.formId}`
-            `https://form-builder-server-ten.vercel.app/submits/${params.formId}`
+            // `http://localhost:5000/forms/${params.formId}`
+            // `http://localhost:5000/forms/${params.formId}`
+            `http://localhost:5000/submits/${params.formId}`
           ),
       },
       {
@@ -48,19 +48,19 @@ const router = createBrowserRouter([
         element: <SingleApplication />,
         loader: ({ params }) =>
           fetch(
-            // `https://form-builder-server-ten.vercel.app/forms/${params.formId}`
-            `https://form-builder-server-ten.vercel.app/applications/${params.applicationId}`
+            // `http://localhost:5000/forms/${params.formId}`
+            `http://localhost:5000/applications/${params.applicationId}`
           ),
       },
-      {
-        path: "updateApplications/:applicationId",
-        element: <UpdateApplication />,
-        loader: ({ params }) =>
-          fetch(
-            // `https://form-builder-server-ten.vercel.app/forms/${params.formId}`
-            `https://form-builder-server-ten.vercel.app/applications/${params.applicationId}`
-          ),
-      },
+      // {
+      //   path: "updateApplications/:applicationId",
+      //   element: <UpdateApplication />,
+      //   loader: ({ params }) =>
+      //     fetch(
+      //       // `http://localhost:5000/forms/${params.formId}`
+      //       `http://localhost:5000/applications/${params.applicationId}`
+      //     ),
+      // },
       {
         path: "form",
         element: <NonLifeInsuranceForm />,

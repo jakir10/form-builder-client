@@ -140,7 +140,8 @@ const NonLifeInsuranceForm = () => {
 
       // Your backend endpoint
       // const endpoint = "http://localhost:5000/submits";
-      const endpoint = "https://form-builder-server-ten.vercel.app/submits";
+      // const endpoint = "http://localhost:5000/submits";
+      const endpoint = "http://localhost:5000/submits";
 
       // Make the HTTP POST request
       const response = await axios.post(endpoint, form);
