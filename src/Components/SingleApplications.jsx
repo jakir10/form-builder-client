@@ -20,7 +20,7 @@ const SingleApplications = () => {
     const fetchApplicationData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:5000/applications/${applicationId}`
+          `https://form-builder-server-ten.vercel.app/applications/${applicationId}`
         );
         setApplicationData(response.data);
       } catch (error) {
@@ -73,11 +73,14 @@ const SingleApplications = () => {
   const handleSaveClick = async () => {
     try {
       // Send a request to save the data using the PATCH method
-      await axios.patch(`http://localhost:5000/applications/${applicationId}`, {
-        inputValues: {
-          rows: applicationData.inputValues.rows,
-        },
-      });
+      await axios.patch(
+        `https://form-builder-server-ten.vercel.app/applications/${applicationId}`,
+        {
+          inputValues: {
+            rows: applicationData.inputValues.rows,
+          },
+        }
+      );
 
       // Notify the user that data has been saved (you may want to show a success message)
       alert("Data saved successfully!");

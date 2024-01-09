@@ -6,7 +6,7 @@
 
 ## Vercel server Link
 
-[Dynamic Form Builder - server](http://localhost:5000)
+[Dynamic Form Builder - server](https://form-builder-server-ten.vercel.app)
 
 ### App Functionality
 

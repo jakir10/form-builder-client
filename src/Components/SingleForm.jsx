@@ -19,7 +19,7 @@ const SingleForm = () => {
     const fetchForm = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:5000/submits/${formId}`
+          `https://form-builder-server-ten.vercel.app/submits/${formId}`
         );
         setFormData(response.data);
         initializeInputValues(response.data.headings);
@@ -88,14 +88,17 @@ const SingleForm = () => {
       // Convert grouped input values to an array
       const rows = Object.values(groupedInputValues);
 
-      const response = await axios.post("http://localhost:5000/application", {
-        formId,
-        templateName: formData.templateName,
-        inputValues: {
-          headings: formData.headings,
-          rows,
-        },
-      });
+      const response = await axios.post(
+        "https://form-builder-server-ten.vercel.app/application",
+        {
+          formId,
+          templateName: formData.templateName,
+          inputValues: {
+            headings: formData.headings,
+            rows,
+          },
+        }
+      );
 
       console.log("Form submitted successfully:", response.data);
 
@@ -139,7 +142,7 @@ const SingleForm = () => {
       const { _id: existingFormId, ...formDataWithoutId } = formData;
 
       const response = await axios.post(
-        "http://localhost:5000/submits",
+        "https://form-builder-server-ten.vercel.app/submits",
         formDataWithoutId
       );
 
@@ -157,7 +160,7 @@ const SingleForm = () => {
       const { _id: existingFormId, ...formDataWithoutId } = formData;
 
       const response = await axios.patch(
-        `http://localhost:5000/submits/${existingFormId}`,
+        `https://form-builder-server-ten.vercel.app/submits/${existingFormId}`,
         formDataWithoutId
       );
 
