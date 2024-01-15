@@ -151,6 +151,34 @@ const SingleApplications = () => {
     }
   };
 
+  const handleExportExcel = () => {
+    // Exclude the "Sl No" column from headings
+    const exportHeadings = applicationData.inputValues.headings.filter(
+      (heading) => heading !== "Sl No"
+    );
+
+    // Create a new array with filtered data
+    const exportRows = applicationData.inputValues.rows.map((row, rowIndex) => {
+      const newRow = {};
+      exportHeadings.forEach((heading, index) => {
+        newRow[heading] = row[heading];
+      });
+      return newRow;
+    });
+
+    // Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(exportRows, {
+      header: exportHeadings,
+    });
+
+    // Add the worksheet to the workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+    // Save the workbook as an Excel file
+    XLSX.writeFile(workbook, `exported_data_${applicationId}.xlsx`);
+  };
+
   if (loading) {
     return <p className="text-center mt-8 text-blue-500">Loading...</p>;
   }
@@ -251,6 +279,14 @@ const SingleApplications = () => {
         </tbody>
       </table>
       <div className="mt-4 flex justify-end">
+        {!isEditing && (
+          <button
+            className="px-4 py-2 mr-2 bg-green-700 hover:bg-green-600 text-white"
+            onClick={handleExportExcel}
+          >
+            Export Excel
+          </button>
+        )}
         {isEditing ? (
           <>
             <button
