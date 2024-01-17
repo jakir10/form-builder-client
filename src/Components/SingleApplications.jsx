@@ -151,26 +151,76 @@ const SingleApplications = () => {
     }
   };
 
+  // const handleExportExcel = () => {
+  //   // Exclude the "Sl No" column from headings
+  //   const exportHeadings = applicationData.inputValues.headings.filter(
+  //     (heading) => heading !== "Sl No"
+  //   );
+
+  //   // Create a new array with filtered data
+  //   const exportRows = applicationData.inputValues.rows.map((row, rowIndex) => {
+  //     const newRow = {};
+  //     exportHeadings.forEach((heading, index) => {
+  //       newRow[heading] = row[heading];
+  //     });
+  //     return newRow;
+  //   });
+
+  //   // Create a new workbook and worksheet
+  //   const workbook = XLSX.utils.book_new();
+  //   const worksheet = XLSX.utils.json_to_sheet(exportRows, {
+  //     header: exportHeadings,
+  //   });
+
+  //   // Add the worksheet to the workbook
+  //   XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+  //   // Save the workbook as an Excel file
+  //   XLSX.writeFile(workbook, `exported_data_${applicationId}.xlsx`);
+  // };
+
   const handleExportExcel = () => {
+    // Extract template name
+    const templateName = applicationData.templateName;
+
     // Exclude the "Sl No" column from headings
     const exportHeadings = applicationData.inputValues.headings.filter(
       (heading) => heading !== "Sl No"
     );
 
     // Create a new array with filtered data
-    const exportRows = applicationData.inputValues.rows.map((row, rowIndex) => {
+    const exportRows = applicationData.inputValues.rows.map((row) => {
       const newRow = {};
-      exportHeadings.forEach((heading, index) => {
+      exportHeadings.forEach((heading) => {
         newRow[heading] = row[heading];
+      });
+      return newRow;
+    });
+
+    // Create a new array with template name and form in the first row
+    const firstRow = [`${templateName}\n Form`];
+
+    // Create a new array with template name in the first cell of each row
+    const exportRowsWithTemplateName = exportRows.map((row) => {
+      const newRow = [];
+      exportHeadings.forEach((heading) => {
+        newRow.push(row[heading]);
       });
       return newRow;
     });
 
     // Create a new workbook and worksheet
     const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(exportRows, {
-      header: exportHeadings,
-    });
+    const worksheet = XLSX.utils.aoa_to_sheet([
+      firstRow,
+      exportHeadings,
+      ...exportRowsWithTemplateName,
+    ]);
+
+    // Set the center alignment for the template name and form in the first row
+    worksheet["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: exportHeadings.length - 1 } },
+    ];
 
     // Add the worksheet to the workbook
     XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
