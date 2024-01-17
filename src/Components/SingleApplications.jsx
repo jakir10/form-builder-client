@@ -94,6 +94,63 @@ const SingleApplications = () => {
     }
   };
 
+  // const handleImportExcel = (e) => {
+  //   const file = e.target.files[0];
+
+  //   if (file) {
+  //     const reader = new FileReader();
+
+  //     reader.onload = (e) => {
+  //       const data = new Uint8Array(e.target.result);
+  //       const workbook = XLSX.read(data, { type: "array" });
+
+  //       // Assuming there is only one sheet in the Excel file
+  //       const sheetName = workbook.SheetNames[0];
+  //       const sheet = workbook.Sheets[sheetName];
+
+  //       // Convert Excel sheet data to JSON
+  //       const excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+  //       // Validate heading names
+  //       const excelHeadings = excelData[0];
+  //       if (
+  //         excelHeadings.length !==
+  //           applicationData.inputValues.headings.length ||
+  //         !applicationData.inputValues.headings.every((heading) =>
+  //           excelHeadings.includes(heading)
+  //         )
+  //       ) {
+  //         alert(
+  //           "Excel file heading names do not match. Please check and try again."
+  //         );
+  //         return;
+  //       }
+
+  //       // Create a new array with matched data
+  //       const matchedRows = excelData.slice(1).map((row) => {
+  //         const newRow = {};
+  //         excelHeadings.forEach((heading, index) => {
+  //           newRow[heading] = row[index];
+  //         });
+  //         return newRow;
+  //       });
+
+  //       // Update application data
+  //       setApplicationData((prevData) => ({
+  //         ...prevData,
+  //         inputValues: {
+  //           ...prevData.inputValues,
+  //           rows: [...prevData.inputValues.rows, ...matchedRows],
+  //         },
+  //       }));
+
+  //       alert("Excel data imported successfully!");
+  //     };
+
+  //     reader.readAsArrayBuffer(file);
+  //   }
+  // };
+
   const handleImportExcel = (e) => {
     const file = e.target.files[0];
 
@@ -111,25 +168,32 @@ const SingleApplications = () => {
         // Convert Excel sheet data to JSON
         const excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-        // Validate heading names
-        const excelHeadings = excelData[0];
+        // Validate if there are at least two rows
+        if (excelData.length < 2) {
+          alert(
+            "Excel file must have at least two rows. Please check and try again."
+          );
+          return;
+        }
+
+        // Validate heading names from the second row
+        const excelHeadings = excelData[1];
+        const templateHeadings = applicationData.inputValues.headings;
+
         if (
-          excelHeadings.length !==
-            applicationData.inputValues.headings.length ||
-          !applicationData.inputValues.headings.every((heading) =>
-            excelHeadings.includes(heading)
-          )
+          excelHeadings.length !== templateHeadings.length ||
+          !templateHeadings.every((heading) => excelHeadings.includes(heading))
         ) {
           alert(
-            "Excel file heading names do not match. Please check and try again."
+            "Excel file heading names do not match the template. Please check and try again."
           );
           return;
         }
 
         // Create a new array with matched data
-        const matchedRows = excelData.slice(1).map((row) => {
+        const matchedRows = excelData.slice(2).map((row) => {
           const newRow = {};
-          excelHeadings.forEach((heading, index) => {
+          templateHeadings.forEach((heading, index) => {
             newRow[heading] = row[index];
           });
           return newRow;
