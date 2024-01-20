@@ -14,6 +14,7 @@ const SingleApplications = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [newRow, setNewRow] = useState({});
+  const [newHeading, setNewHeading] = useState("");
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
@@ -77,6 +78,7 @@ const SingleApplications = () => {
         `https://form-builder-server-ten.vercel.app/applications/${applicationId}`,
         {
           inputValues: {
+            headings: applicationData.inputValues.headings,
             rows: applicationData.inputValues.rows,
           },
         }
@@ -94,63 +96,6 @@ const SingleApplications = () => {
     }
   };
 
-  // const handleImportExcel = (e) => {
-  //   const file = e.target.files[0];
-
-  //   if (file) {
-  //     const reader = new FileReader();
-
-  //     reader.onload = (e) => {
-  //       const data = new Uint8Array(e.target.result);
-  //       const workbook = XLSX.read(data, { type: "array" });
-
-  //       // Assuming there is only one sheet in the Excel file
-  //       const sheetName = workbook.SheetNames[0];
-  //       const sheet = workbook.Sheets[sheetName];
-
-  //       // Convert Excel sheet data to JSON
-  //       const excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-  //       // Validate heading names
-  //       const excelHeadings = excelData[0];
-  //       if (
-  //         excelHeadings.length !==
-  //           applicationData.inputValues.headings.length ||
-  //         !applicationData.inputValues.headings.every((heading) =>
-  //           excelHeadings.includes(heading)
-  //         )
-  //       ) {
-  //         alert(
-  //           "Excel file heading names do not match. Please check and try again."
-  //         );
-  //         return;
-  //       }
-
-  //       // Create a new array with matched data
-  //       const matchedRows = excelData.slice(1).map((row) => {
-  //         const newRow = {};
-  //         excelHeadings.forEach((heading, index) => {
-  //           newRow[heading] = row[index];
-  //         });
-  //         return newRow;
-  //       });
-
-  //       // Update application data
-  //       setApplicationData((prevData) => ({
-  //         ...prevData,
-  //         inputValues: {
-  //           ...prevData.inputValues,
-  //           rows: [...prevData.inputValues.rows, ...matchedRows],
-  //         },
-  //       }));
-
-  //       alert("Excel data imported successfully!");
-  //     };
-
-  //     reader.readAsArrayBuffer(file);
-  //   }
-  // };
-
   const handleImportExcel = (e) => {
     const file = e.target.files[0];
 
@@ -161,22 +106,11 @@ const SingleApplications = () => {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: "array" });
 
-        // Assuming there is only one sheet in the Excel file
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
 
-        // Convert Excel sheet data to JSON
         const excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-        // Validate if there are at least two rows
-        if (excelData.length < 2) {
-          alert(
-            "Excel file must have at least two rows. Please check and try again."
-          );
-          return;
-        }
-
-        // Validate heading names from the second row
         const excelHeadings = excelData[1];
         const templateHeadings = applicationData.inputValues.headings;
 
@@ -190,69 +124,50 @@ const SingleApplications = () => {
           return;
         }
 
-        // Create a new array with matched data
-        const matchedRows = excelData.slice(2).map((row) => {
-          const newRow = {};
-          templateHeadings.forEach((heading, index) => {
-            newRow[heading] = row[index];
+        const existingRows = applicationData.inputValues.rows;
+
+        const matchedRows = excelData
+          .slice(2)
+          .map((row) => {
+            const newRow = {};
+            templateHeadings.forEach((heading, index) => {
+              newRow[heading] = row[index];
+            });
+            return newRow;
+          })
+          .filter((newRow) => {
+            return !existingRows.some((existingRow) => {
+              return templateHeadings.every(
+                (heading) => existingRow[heading] === newRow[heading]
+              );
+            });
           });
-          return newRow;
-        });
 
-        // Update application data
-        setApplicationData((prevData) => ({
-          ...prevData,
-          inputValues: {
-            ...prevData.inputValues,
-            rows: [...prevData.inputValues.rows, ...matchedRows],
-          },
-        }));
-
-        alert("Excel data imported successfully!");
+        if (matchedRows.length > 0) {
+          setApplicationData((prevData) => ({
+            ...prevData,
+            inputValues: {
+              ...prevData.inputValues,
+              rows: [...prevData.inputValues.rows, ...matchedRows],
+            },
+          }));
+          alert("Excel data imported successfully!");
+        } else {
+          alert("No new data found in the Excel file.");
+        }
       };
 
       reader.readAsArrayBuffer(file);
     }
   };
 
-  // const handleExportExcel = () => {
-  //   // Exclude the "Sl No" column from headings
-  //   const exportHeadings = applicationData.inputValues.headings.filter(
-  //     (heading) => heading !== "Sl No"
-  //   );
-
-  //   // Create a new array with filtered data
-  //   const exportRows = applicationData.inputValues.rows.map((row, rowIndex) => {
-  //     const newRow = {};
-  //     exportHeadings.forEach((heading, index) => {
-  //       newRow[heading] = row[heading];
-  //     });
-  //     return newRow;
-  //   });
-
-  //   // Create a new workbook and worksheet
-  //   const workbook = XLSX.utils.book_new();
-  //   const worksheet = XLSX.utils.json_to_sheet(exportRows, {
-  //     header: exportHeadings,
-  //   });
-
-  //   // Add the worksheet to the workbook
-  //   XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-
-  //   // Save the workbook as an Excel file
-  //   XLSX.writeFile(workbook, `exported_data_${applicationId}.xlsx`);
-  // };
-
   const handleExportExcel = () => {
-    // Extract template name
     const templateName = applicationData.templateName;
 
-    // Exclude the "Sl No" column from headings
     const exportHeadings = applicationData.inputValues.headings.filter(
       (heading) => heading !== "Sl No"
     );
 
-    // Create a new array with filtered data
     const exportRows = applicationData.inputValues.rows.map((row) => {
       const newRow = {};
       exportHeadings.forEach((heading) => {
@@ -261,10 +176,8 @@ const SingleApplications = () => {
       return newRow;
     });
 
-    // Create a new array with template name and form in the first row
     const firstRow = [`${templateName}\n Form`];
 
-    // Create a new array with template name in the first cell of each row
     const exportRowsWithTemplateName = exportRows.map((row) => {
       const newRow = [];
       exportHeadings.forEach((heading) => {
@@ -273,7 +186,6 @@ const SingleApplications = () => {
       return newRow;
     });
 
-    // Create a new workbook and worksheet
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.aoa_to_sheet([
       firstRow,
@@ -281,16 +193,59 @@ const SingleApplications = () => {
       ...exportRowsWithTemplateName,
     ]);
 
-    // Set the center alignment for the template name and form in the first row
     worksheet["!merges"] = [
       { s: { r: 0, c: 0 }, e: { r: 0, c: exportHeadings.length - 1 } },
     ];
 
-    // Add the worksheet to the workbook
     XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
 
-    // Save the workbook as an Excel file
     XLSX.writeFile(workbook, `exported_data_${applicationId}.xlsx`);
+  };
+
+  const handleAddHeadingClick = () => {
+    if (newHeading.trim() === "") {
+      alert("Heading name cannot be empty");
+      return;
+    }
+
+    setApplicationData((prevData) => ({
+      ...prevData,
+      inputValues: {
+        ...prevData.inputValues,
+        headings: [...prevData.inputValues.headings, newHeading],
+        rows: prevData.inputValues.rows.map((row) => {
+          return {
+            ...row,
+            [newHeading]: "",
+          };
+        }),
+      },
+    }));
+
+    setNewHeading("");
+  };
+
+  const handleRemoveHeadingClick = (headingIndexToRemove) => {
+    setApplicationData((prevData) => {
+      const updatedHeadings = prevData.inputValues.headings.filter(
+        (_, index) => index !== headingIndexToRemove
+      );
+
+      const updatedRows = prevData.inputValues.rows.map((row) => {
+        const newRow = { ...row };
+        delete newRow[prevData.inputValues.headings[headingIndexToRemove]];
+        return newRow;
+      });
+
+      return {
+        ...prevData,
+        inputValues: {
+          ...prevData.inputValues,
+          headings: updatedHeadings,
+          rows: updatedRows,
+        },
+      };
+    });
   };
 
   if (loading) {
@@ -327,8 +282,33 @@ const SingleApplications = () => {
                   className="border px-4 py-2 text-left capitalize text-center"
                 >
                   {heading}
+                  {isEditing && (
+                    <button
+                      className="text-red-600 ml-1"
+                      onClick={() => handleRemoveHeadingClick(index)}
+                    >
+                      &#10005; Remove
+                    </button>
+                  )}
                 </th>
               ))}
+            {isEditing && (
+              <th className="border px-4 py-2 text-center">
+                <input
+                  type="text"
+                  value={newHeading}
+                  placeholder="New Heading"
+                  className="w-full border rounded px-1 py-1 my-1 text-sm border-blue-500 text-gray-700"
+                  onChange={(e) => setNewHeading(e.target.value)}
+                />
+                <button
+                  className="text-green-600 ml-1"
+                  onClick={handleAddHeadingClick}
+                >
+                  + Add
+                </button>
+              </th>
+            )}
             {isEditing && (
               <th className="border px-4 py-2 text-center">Actions</th>
             )}
