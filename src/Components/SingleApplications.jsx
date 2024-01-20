@@ -71,6 +71,7 @@ const SingleApplications = () => {
     });
   };
 
+  
   const handleSaveClick = async () => {
     try {
       // Send a request to save the data using the PATCH method
