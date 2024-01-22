@@ -71,31 +71,6 @@ const SingleApplications = () => {
     });
   };
 
-  const handleSaveClick = async () => {
-    try {
-      // Send a request to save the data using the PATCH method
-      await axios.patch(
-        `https://form-builder-server-ten.vercel.app/applications/${applicationId}`,
-        {
-          inputValues: {
-            headings: applicationData.inputValues.headings,
-            rows: applicationData.inputValues.rows,
-          },
-        }
-      );
-
-      // Notify the user that data has been saved (you may want to show a success message)
-      alert("Data saved successfully!");
-
-      // Reload the page to exit the edit mode and see the saved data
-      window.location.reload();
-    } catch (error) {
-      console.error("Error saving data:", error.message);
-      // Notify the user that an error occurred during saving
-      alert("Error saving data. Please try again.");
-    }
-  };
-
   const handleImportExcel = (e) => {
     const file = e.target.files[0];
 
@@ -202,25 +177,32 @@ const SingleApplications = () => {
     XLSX.writeFile(workbook, `exported_data_${applicationId}.xlsx`);
   };
 
+  // Assuming newHeading is a state variable
+
   const handleAddHeadingClick = () => {
     if (newHeading.trim() === "") {
       alert("Heading name cannot be empty");
       return;
     }
 
-    setApplicationData((prevData) => ({
-      ...prevData,
-      inputValues: {
-        ...prevData.inputValues,
-        headings: [...prevData.inputValues.headings, newHeading],
-        rows: prevData.inputValues.rows.map((row) => {
-          return {
-            ...row,
-            [newHeading]: "",
-          };
-        }),
-      },
-    }));
+    setApplicationData((prevData) => {
+      const updatedHeadings = [...prevData.inputValues.headings, newHeading];
+      const updatedRows = prevData.inputValues.rows.map((row) => {
+        return {
+          ...row,
+          [newHeading]: "",
+        };
+      });
+
+      return {
+        ...prevData,
+        inputValues: {
+          ...prevData.inputValues,
+          headings: updatedHeadings,
+          rows: updatedRows,
+        },
+      };
+    });
 
     setNewHeading("");
   };
@@ -246,6 +228,23 @@ const SingleApplications = () => {
         },
       };
     });
+  };
+
+  const handleSaveClick = async () => {
+    try {
+      await axios.patch(
+        `https://form-builder-server-ten.vercel.app/applications/${applicationId}`,
+        {
+          inputValues: applicationData.inputValues,
+        }
+      );
+
+      alert("Data saved successfully!");
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error saving data:", error.message);
+      alert("Error saving data. Please try again.");
+    }
   };
 
   if (loading) {
@@ -284,7 +283,7 @@ const SingleApplications = () => {
                   {heading}
                   {isEditing && (
                     <button
-                      className="text-red-600 ml-1"
+                      className="text-red-600 hover:text-red-500 ml-1"
                       onClick={() => handleRemoveHeadingClick(index)}
                     >
                       &#10005; Remove
@@ -302,7 +301,7 @@ const SingleApplications = () => {
                   onChange={(e) => setNewHeading(e.target.value)}
                 />
                 <button
-                  className="text-green-600 ml-1"
+                  className="text-white hover:text-green-400 ml-1"
                   onClick={handleAddHeadingClick}
                 >
                   + Add
@@ -385,7 +384,10 @@ const SingleApplications = () => {
           <>
             <button
               className="px-4 py-2 mr-2 bg-red-600 hover:bg-red-600 text-white"
-              onClick={() => setIsEditing(false)}
+              onClick={() => {
+                setIsEditing(false);
+                window.location.reload();
+              }}
             >
               Cancel
             </button>
