@@ -7,6 +7,7 @@ import SingleForm from "../Components/SingleForm";
 import Home from "../Components/Home";
 import AllApplications from "../Components/allApplications";
 import SingleApplication from "../Components/SingleApplications";
+import About from "../Components/About";
 // import UpdateApplication from "../Components/UpdateApplication";
 // import NonLifeInsuranceForm from "../Components/NonLifeInsuranceForm";
 
@@ -23,6 +24,10 @@ const router = createBrowserRouter([
       {
         path: "/home",
         element: <Home />,
+      },
+      {
+        path: "/about",
+        element: <About />,
       },
       {
         path: "allForms",
