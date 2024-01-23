@@ -10,9 +10,7 @@ const AllForms = () => {
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
-        const response = await axios.get(
-          "https://form-builder-server-ten.vercel.app/submits"
-        );
+        const response = await axios.get("http://localhost:5000/submits");
         setSubmissions(response.data);
         console.log(response);
       } catch (error) {
@@ -29,9 +27,7 @@ const AllForms = () => {
   const handleDelete = async (submissionId) => {
     try {
       // Send a DELETE request to your backend to delete the submission
-      await axios.delete(
-        `https://form-builder-server-ten.vercel.app/submits/${submissionId}`
-      );
+      await axios.delete(`http://localhost:5000/submits/${submissionId}`);
       // Update the state by removing the deleted submission
       setSubmissions((prevSubmissions) =>
         prevSubmissions.filter((submission) => submission._id !== submissionId)
@@ -51,7 +47,7 @@ const AllForms = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
       {submissions.map((submission) => (
         <div
           key={submission._id}

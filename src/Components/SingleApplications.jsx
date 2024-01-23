@@ -21,7 +21,7 @@ const SingleApplications = () => {
     const fetchApplicationData = async () => {
       try {
         const response = await axios.get(
-          `https://form-builder-server-ten.vercel.app/applications/${applicationId}`
+          `http://localhost:5000/applications/${applicationId}`
         );
         setApplicationData(response.data);
       } catch (error) {
@@ -232,12 +232,9 @@ const SingleApplications = () => {
 
   const handleSaveClick = async () => {
     try {
-      await axios.patch(
-        `https://form-builder-server-ten.vercel.app/applications/${applicationId}`,
-        {
-          inputValues: applicationData.inputValues,
-        }
-      );
+      await axios.patch(`http://localhost:5000/applications/${applicationId}`, {
+        inputValues: applicationData.inputValues,
+      });
 
       alert("Data saved successfully!");
       setIsEditing(false);
@@ -383,7 +380,7 @@ const SingleApplications = () => {
         {isEditing ? (
           <>
             <button
-              className="px-4 py-2 mr-2 bg-red-600 hover:bg-red-600 text-white"
+              className="px-4 py-2 mr-2 bg-red-700 hover:bg-red-500 text-white"
               onClick={() => {
                 setIsEditing(false);
                 window.location.reload();

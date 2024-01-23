@@ -34,9 +34,9 @@ const router = createBrowserRouter([
         element: <SingleForm />,
         loader: ({ params }) =>
           fetch(
-            // `https://form-builder-server-ten.vercel.app/forms/${params.formId}`
-            // `https://form-builder-server-ten.vercel.app/forms/${params.formId}`
-            `https://form-builder-server-ten.vercel.app/submits/${params.formId}`
+            // `http://localhost:5000/forms/${params.formId}`
+            // `http://localhost:5000/forms/${params.formId}`
+            `http://localhost:5000/submits/${params.formId}`
           ),
       },
       {
@@ -48,8 +48,8 @@ const router = createBrowserRouter([
         element: <SingleApplication />,
         loader: ({ params }) =>
           fetch(
-            // `https://form-builder-server-ten.vercel.app/forms/${params.formId}`
-            `https://form-builder-server-ten.vercel.app/applications/${params.applicationId}`
+            // `http://localhost:5000/forms/${params.formId}`
+            `http://localhost:5000/applications/${params.applicationId}`
           ),
       },
       // {
@@ -57,8 +57,8 @@ const router = createBrowserRouter([
       //   element: <UpdateApplication />,
       //   loader: ({ params }) =>
       //     fetch(
-      //       // `https://form-builder-server-ten.vercel.app/forms/${params.formId}`
-      //       `https://form-builder-server-ten.vercel.app/applications/${params.applicationId}`
+      //       // `http://localhost:5000/forms/${params.formId}`
+      //       `http://localhost:5000/applications/${params.applicationId}`
       //     ),
       // },
       {

@@ -9,9 +9,7 @@ const AllApplications = () => {
   useEffect(() => {
     const fetchApplications = async () => {
       try {
-        const response = await axios.get(
-          `https://form-builder-server-ten.vercel.app/applications`
-        );
+        const response = await axios.get(`http://localhost:5000/applications`);
         setApplications(response.data);
         setLoading(false);
       } catch (error) {
@@ -27,7 +25,7 @@ const AllApplications = () => {
     const proceed = window.confirm("Are you sure you want to delete?");
     if (proceed) {
       console.log("delete application", id);
-      const url = `https://form-builder-server-ten.vercel.app/applications/${id}`;
+      const url = `http://localhost:5000/applications/${id}`;
       axios
         .delete(url)
         .then((response) => {
@@ -46,14 +44,14 @@ const AllApplications = () => {
   }
 
   return (
-    <div className="container mx-auto mt-8">
+    <div className="container mx-auto mt-8 mb-8">
       <h2 className="text-4xl text-center font-bold mb-6 text-indigo-600">
         All Applications
       </h2>
       <table className="table-auto w-full border-collapse border">
         <thead>
           <tr className="bg-indigo-500 text-white">
-            <th className="border px-4 py-2 text-center">Sl NO</th>
+            <th className="border px-2 py-2 text-center">Sl NO</th>
             <th className="border px-4 py-2 text-center">Application Name</th>
             <th className="border px-4 py-2 text-center">Link</th>
             <th className="border px-4 py-2 w-40 text-center">Actions</th>
@@ -78,12 +76,15 @@ const AllApplications = () => {
                 </Link>
               </td>
               <td>
+                <div className="flex flex-col items-center justify-center">
                 <button
                   onClick={() => deleteApplication(application._id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 ml-2"
+                  className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-700 ml-2"
                 >
                   Remove
                 </button>
+                  
+                </div>
               </td>
             </tr>
           ))}
