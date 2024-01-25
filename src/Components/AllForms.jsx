@@ -10,7 +10,7 @@ const AllForms = () => {
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/submits");
+        const response = await axios.get("https://form-builder-server-ten.vercel.app/submits");
         setSubmissions(response.data);
         console.log(response);
       } catch (error) {
@@ -27,7 +27,7 @@ const AllForms = () => {
   const handleDelete = async (submissionId) => {
     try {
       // Send a DELETE request to your backend to delete the submission
-      await axios.delete(`http://localhost:5000/submits/${submissionId}`);
+      await axios.delete(`https://form-builder-server-ten.vercel.app/submits/${submissionId}`);
       // Update the state by removing the deleted submission
       setSubmissions((prevSubmissions) =>
         prevSubmissions.filter((submission) => submission._id !== submissionId)
@@ -62,13 +62,13 @@ const AllForms = () => {
           <div className="flex items-center justify-between p-6 bg-gray-100">
             <button
               onClick={() => handleDelete(submission._id)}
-              className="btn-sm bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-4 rounded-full focus:outline-none focus:shadow-outline-red"
+              className="btn-sm bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-4 rounded-full focus:outline-none focus:shadow-outline-red transition-transform transform hover:scale-105"
             >
               Delete
             </button>
             <Link
               to={`/submits/${submission._id}`}
-              className="btn-sm bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-4 rounded-full focus:outline-none focus:shadow-outline-blue"
+              className="btn-sm bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-4 rounded-full focus:outline-none focus:shadow-outline-blue transition-transform transform hover:scale-105"
             >
               View Form
             </Link>

@@ -19,7 +19,7 @@ const SingleForm = () => {
     const fetchForm = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:5000/submits/${formId}`
+          `https://form-builder-server-ten.vercel.app/submits/${formId}`
         );
         setFormData(response.data);
         initializeInputValues(response.data.headings);
@@ -88,7 +88,7 @@ const SingleForm = () => {
       // Convert grouped input values to an array
       const rows = Object.values(groupedInputValues);
 
-      const response = await axios.post("http://localhost:5000/application", {
+      const response = await axios.post("https://form-builder-server-ten.vercel.app/application", {
         formId,
         templateName: formData.templateName,
         inputValues: {
@@ -139,7 +139,7 @@ const SingleForm = () => {
       const { _id: existingFormId, ...formDataWithoutId } = formData;
 
       const response = await axios.post(
-        "http://localhost:5000/submits",
+        "https://form-builder-server-ten.vercel.app/submits",
         formDataWithoutId
       );
 
@@ -157,7 +157,7 @@ const SingleForm = () => {
       const { _id: existingFormId, ...formDataWithoutId } = formData;
 
       const response = await axios.patch(
-        `http://localhost:5000/submits/${existingFormId}`,
+        `https://form-builder-server-ten.vercel.app/submits/${existingFormId}`,
         formDataWithoutId
       );
 
@@ -204,7 +204,7 @@ const SingleForm = () => {
                 {editMode && (
                   <button
                     type="button"
-                    className="ml-2 text-red-600"
+                    className="ml-2 text-red-600 hover:font-bold transform hover:scale-125"
                     onClick={() => removeHeading(index)}
                   >
                     &#10005;
@@ -260,21 +260,21 @@ const SingleForm = () => {
               />
               <button
                 type="button"
-                className="bg-blue-500 text-white px-4 py-2 rounded ml-2"
+                className="bg-blue-500 text-white px-4 py-2 rounded ml-2 hover:bg-blue-600 transition-transform transform hover:scale-105"
                 onClick={addHeading}
               >
                 Add Heading
               </button>
               <button
                 type="button"
-                className="bg-blue-500 text-white px-4 py-2 rounded ml-2"
+                className="bg-blue-500 text-white px-4 py-2 rounded ml-2 hover:bg-blue-600 transition-transform transform hover:scale-105"
                 onClick={addRow}
               >
                 Add Row
               </button>
               <button
                 type="button"
-                className="bg-green-500 text-white px-4 py-2 rounded ml-2"
+                className="bg-green-500 text-white px-4 py-2 rounded ml-2 hover:bg-green-600 transition-transform transform hover:scale-105"
                 onClick={saveTemplate}
               >
                 Save Template
@@ -282,14 +282,14 @@ const SingleForm = () => {
               {/* update */}
               <button
                 type="button"
-                className="bg-yellow-500 text-white px-4 py-2 rounded ml-2"
+                className="bg-yellow-500 text-white px-4 py-2 rounded ml-2 hover:bg-yellow-600 transition-transform transform hover:scale-105"
                 onClick={updateTemplate}
               >
                 Update Template
               </button>
               <button
                 type="button"
-                className="bg-red-500 text-white px-4 py-2 rounded ml-2"
+                className="bg-red-500 text-white px-4 py-2 rounded ml-2 hover:bg-red-600 transition-transform transform hover:scale-105"
                 onClick={removeRow}
               >
                 Remove Row
@@ -300,7 +300,7 @@ const SingleForm = () => {
             type="button"
             className={`${
               editMode ? "bg-yellow-500" : "bg-blue-500"
-            } text-white px-7 py-2  rounded ml-2 hover:bg-yellow-600 text-white font-bold focus:outline-none focus:shadow-outline-blue`}
+            } text-white px-7 py-2  rounded ml-2 hover:bg-yellow-600 font-bold focus:outline-none focus:shadow-outline-blue transition-transform transform hover:scale-105`}
             onClick={() => setEditMode((prev) => !prev)}
           >
             {editMode ? "Cancel Edit" : "Edit"}
@@ -308,7 +308,7 @@ const SingleForm = () => {
           {!editMode && (
             <button
               type="button"
-              className="bg-blue-500 text-white px-4 py-2 rounded ml-2 hover:bg-blue-600 text-white font-bold focus:outline-none focus:shadow-outline-blue"
+              className="bg-blue-500 text-white px-4 py-2 rounded ml-2 hover:bg-blue-600 font-bold focus:outline-none focus:shadow-outline-blue hover:bg-blue-600 transition-transform transform hover:scale-105"
               onClick={handleSubmitForm}
             >
               Submit

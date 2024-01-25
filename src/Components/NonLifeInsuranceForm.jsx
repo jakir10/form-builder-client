@@ -139,9 +139,9 @@ const NonLifeInsuranceForm = () => {
       console.log("Form Submitted:", { form });
 
       // Your backend endpoint
-      // const endpoint = "http://localhost:5000/submits";
-      // const endpoint = "http://localhost:5000/submits";
-      const endpoint = "http://localhost:5000/submits";
+      // const endpoint = "https://form-builder-server-ten.vercel.app/submits";
+      // const endpoint = "https://form-builder-server-ten.vercel.app/submits";
+      const endpoint = "https://form-builder-server-ten.vercel.app/submits";
 
       // Make the HTTP POST request
       const response = await axios.post(endpoint, form);
@@ -172,7 +172,7 @@ const NonLifeInsuranceForm = () => {
         <div className="flex justify-start mb-4">
           <button
             type="button"
-            className="bg-blue-500 text-white px-4 py-2 rounded"
+            className="bg-blue-500 text-white px-4 py-2 rounded transition-transform transform hover:scale-105"
             onClick={openCreateTemplateModal}
           >
             Create Template
@@ -190,7 +190,7 @@ const NonLifeInsuranceForm = () => {
             <div className="flex justify-start mb-4">
               <button
                 type="button"
-                className="bg-blue-500 text-white px-4 py-2 rounded"
+                className="bg-blue-500 text-white px-4 py-2 rounded transition-transform transform hover:scale-105"
                 onClick={openAddHeadingModal}
               >
                 Add Heading
@@ -211,7 +211,7 @@ const NonLifeInsuranceForm = () => {
                   <span>{heading}</span>
                   <button
                     type="button"
-                    className="text-red-500"
+                    className="text-red-500 transition-transform transform hover:scale-105"
                     onClick={() => removeHeading(index)}
                   >
                     &#10006;
@@ -220,7 +220,7 @@ const NonLifeInsuranceForm = () => {
               ))}
               <button
                 type="button"
-                className="bg-blue-500 text-white px-4 py-2 rounded"
+                className="bg-blue-500 text-white px-4 py-2 rounded transition-transform transform hover:scale-105"
                 onClick={openAddHeadingModal}
               >
                 Add Heading
@@ -264,7 +264,7 @@ const NonLifeInsuranceForm = () => {
                   <td className="border px-4 py-2">
                     <button
                       type="button"
-                      className="bg-red-500 text-white px-2 py-1 rounded mr-2"
+                      className="bg-red-500 text-white px-2 py-1 rounded mr-2 transition-transform transform hover:scale-105"
                       onClick={() => removeRow(rowIndex)}
                     >
                       Remove Row
@@ -287,7 +287,7 @@ const NonLifeInsuranceForm = () => {
           <div className="mt-4">
             <button
               type="button"
-              className="bg-green-500 text-white px-4 py-2 rounded"
+              className="bg-green-500 text-white px-4 py-2 rounded transition-transform transform hover:scale-105"
               onClick={addRow}
             >
               Add Row
@@ -315,14 +315,14 @@ const NonLifeInsuranceForm = () => {
             <div className="flex justify-end">
               <button
                 type="button"
-                className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                className="bg-blue-500 text-white px-4 py-2 rounded mr-2 transition-transform transform hover:scale-105"
                 onClick={addHeading}
               >
                 Add
               </button>
               <button
                 type="button"
-                className="bg-gray-500 text-white px-4 py-2 rounded"
+                className="bg-gray-500 text-white px-4 py-2 rounded transition-transform transform hover:scale-105"
                 onClick={closeAddHeadingModal}
               >
                 Cancel
@@ -351,14 +351,14 @@ const NonLifeInsuranceForm = () => {
             <div className="flex justify-end">
               <button
                 type="button"
-                className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                className="bg-blue-500 text-white px-4 py-2 rounded mr-2 transition-transform transform hover:scale-105"
                 onClick={createTemplate}
               >
                 Create
               </button>
               <button
                 type="button"
-                className="bg-gray-500 text-white px-4 py-2 rounded"
+                className="bg-gray-500 text-white px-4 py-2 rounded transition-transform transform hover:scale-105"
                 onClick={closeCreateTemplateModal}
               >
                 Cancel
@@ -372,7 +372,7 @@ const NonLifeInsuranceForm = () => {
         {isTemplateCreated && (
           <button
             type="button"
-            className="bg-green-500 text-white px-4 py-2 rounded"
+            className="bg-green-500 text-white px-4 py-2 rounded transition-transform transform hover:scale-105"
             onClick={handleSubmitForm}
           >
             Save Template

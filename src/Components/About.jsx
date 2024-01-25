@@ -13,7 +13,7 @@ const About = () => {
       <h1 className="text-5xl text-blue-500 font-bold">About Us</h1>
       <p className="py-6">Design your form and application with easy form-making and filling <br/>
         Create & customize your own form and submit edit update as per your need.</p>
-      <Link to="/home"><button className="btn text-white bg-sky-700  hover:bg-sky-500">Get Started</button></Link>
+      <Link to="/home"><button className="btn text-white bg-sky-700  hover:bg-sky-500 transition-transform transform hover:scale-105">Get Started</button></Link>
     </div>
   </div>
 </div>

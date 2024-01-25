@@ -9,7 +9,7 @@ const AllApplications = () => {
   useEffect(() => {
     const fetchApplications = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/applications`);
+        const response = await axios.get(`https://form-builder-server-ten.vercel.app/applications`);
         setApplications(response.data);
         setLoading(false);
       } catch (error) {
@@ -25,7 +25,7 @@ const AllApplications = () => {
     const proceed = window.confirm("Are you sure you want to delete?");
     if (proceed) {
       console.log("delete application", id);
-      const url = `http://localhost:5000/applications/${id}`;
+      const url = `https://form-builder-server-ten.vercel.app/applications/${id}`;
       axios
         .delete(url)
         .then((response) => {
@@ -63,14 +63,14 @@ const AllApplications = () => {
               key={application._id}
               className="hover:bg-gray-100 transition duration-300"
             >
-              <td className="border px-4 py-2 text-center">{index + 1}</td>
-              <td className="border px-4 py-2 text-center">
+              <td className="border px-4 py-2 text-center text-indigo-700">{index + 1}</td>
+              <td className="border px-4 py-2 text-center text-base font-semibold text-indigo-700 transition-transform transform hover:scale-105">
                 {application.templateName}
               </td>
               <td className="border px-4 py-2 flex justify-center items-center">
                 <Link
                   to={`/applications/${application._id}`}
-                  className="text-indigo-600 hover:underline"
+                  className="text-indigo-500 hover:text-indigo-600 font-bold  transition-transform transform hover:scale-110 "
                 >
                   View Details
                 </Link>
@@ -79,7 +79,7 @@ const AllApplications = () => {
                 <div className="flex flex-col items-center justify-center">
                 <button
                   onClick={() => deleteApplication(application._id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-700 ml-2"
+                  className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-700 ml-2 transition-transform transform hover:scale-105"
                 >
                   Remove
                 </button>

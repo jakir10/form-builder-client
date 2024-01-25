@@ -21,7 +21,7 @@ const SingleApplications = () => {
     const fetchApplicationData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:5000/applications/${applicationId}`
+          `https://form-builder-server-ten.vercel.app/applications/${applicationId}`
         );
         setApplicationData(response.data);
       } catch (error) {
@@ -232,7 +232,7 @@ const SingleApplications = () => {
 
   const handleSaveClick = async () => {
     try {
-      await axios.patch(`http://localhost:5000/applications/${applicationId}`, {
+      await axios.patch(`https://form-builder-server-ten.vercel.app/applications/${applicationId}`, {
         inputValues: applicationData.inputValues,
       });
 
@@ -275,12 +275,12 @@ const SingleApplications = () => {
               headings.map((heading, index) => (
                 <th
                   key={index}
-                  className="border px-4 py-2 text-left capitalize text-center"
+                  className="border px-4 py-2 capitalize text-center"
                 >
                   {heading}
                   {isEditing && (
                     <button
-                      className="text-red-600 hover:text-red-500 ml-1"
+                      className="text-red-600 hover:text-red-500 ml-1 transform hover:scale-125"
                       onClick={() => handleRemoveHeadingClick(index)}
                     >
                       &#10005; Remove
@@ -298,7 +298,7 @@ const SingleApplications = () => {
                   onChange={(e) => setNewHeading(e.target.value)}
                 />
                 <button
-                  className="text-white hover:text-green-400 ml-1"
+                  className="text-white hover:text-green-400 ml-1 transform hover:scale-105"
                   onClick={handleAddHeadingClick}
                 >
                   + Add
@@ -327,7 +327,7 @@ const SingleApplications = () => {
               {isEditing && (
                 <td className="border px-4 py-2 text-center">
                   <button
-                    className="text-red-600"
+                    className="text-red-600 transform hover:scale-105"
                     onClick={() => handleRemoveRowClick(rowIndex)}
                   >
                     &#10005; Remove Row
@@ -371,7 +371,7 @@ const SingleApplications = () => {
       <div className="mt-4 flex justify-end">
         {!isEditing && (
           <button
-            className="px-4 py-2 mr-2 bg-green-700 hover:bg-green-600 text-white"
+            className="px-4 py-2 mr-2 bg-green-700 hover:bg-green-600 text-white transition-transform transform hover:scale-105"
             onClick={handleExportExcel}
           >
             Export Excel
@@ -380,7 +380,7 @@ const SingleApplications = () => {
         {isEditing ? (
           <>
             <button
-              className="px-4 py-2 mr-2 bg-red-700 hover:bg-red-500 text-white"
+              className="px-4 py-2 mr-2 bg-red-700 hover:bg-red-500 text-white transition-transform transform hover:scale-105"
               onClick={() => {
                 setIsEditing(false);
                 window.location.reload();
@@ -389,18 +389,18 @@ const SingleApplications = () => {
               Cancel
             </button>
             <button
-              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-sm text-white"
+              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-sm text-white transition-transform transform hover:scale-105"
               onClick={handleAddRowClick}
             >
               Add Row
             </button>
             <button
-              className="px-6 py-2 ml-2 bg-blue-600 hover:bg-blue-500 text-white"
+              className="px-6 py-2 ml-2 bg-blue-600 hover:bg-blue-500 text-white transition-transform transform hover:scale-105"
               onClick={handleSaveClick}
             >
               Save
             </button>
-            <label className="px-4 py-2 ml-2 bg-green-700 hover:bg-green-600 text-white cursor-pointer">
+            <label className="px-4 py-2 ml-2 bg-green-700 hover:bg-green-600 text-white cursor-pointer transition-transform transform hover:scale-105">
               Import Excel
               <input
                 type="file"
@@ -412,7 +412,7 @@ const SingleApplications = () => {
           </>
         ) : (
           <button
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white"
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white transition-transform transform hover:scale-105"
             onClick={handleUpdateClick}
           >
             Add More
