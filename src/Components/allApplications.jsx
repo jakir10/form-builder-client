@@ -9,7 +9,7 @@ const AllApplications = () => {
   useEffect(() => {
     const fetchApplications = async () => {
       try {
-        const response = await axios.get(`https://form-builder-server-ten.vercel.app/applications`);
+        const response = await axios.get(`http://localhost:5000/applications`);
         setApplications(response.data);
         setLoading(false);
       } catch (error) {
@@ -25,7 +25,7 @@ const AllApplications = () => {
     const proceed = window.confirm("Are you sure you want to delete?");
     if (proceed) {
       console.log("delete application", id);
-      const url = `https://form-builder-server-ten.vercel.app/applications/${id}`;
+      const url = `http://localhost:5000/applications/${id}`;
       axios
         .delete(url)
         .then((response) => {
