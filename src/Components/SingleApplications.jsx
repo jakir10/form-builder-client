@@ -4,7 +4,10 @@ import { useParams } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import logoImage from "../assets/logo.png"; // Import the logo image
+// import logoImage from "../assets/logo.png"; // Import the logo image
+import phone from "../assets/phone.png";
+import email from "../assets/email.png";
+import gps from "../assets/gps.png";
 
 const SingleApplications = () => {
   const { applicationId } = useParams();
@@ -27,12 +30,13 @@ const SingleApplications = () => {
   //   return { userName, userDate };
   // };
   // New state variables for modal
+  // const [logoLink, setLogoLink] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [userInfo, setUserInfo] = useState({
     companyName: "",
     userName: "",
     userAddress: "",
-    userDescription: "",
+    reportDescription: "",
     userPhone: "",
     userEmail: "",
   });
@@ -40,7 +44,7 @@ const SingleApplications = () => {
     companyName: "",
     userName: "",
     userAddress: "",
-    userDescription: "",
+    reportDescription: "",
     userPhone: "",
     userEmail: "",
   });
@@ -68,7 +72,30 @@ const SingleApplications = () => {
   };
 
   const handleInputChange = (heading, value) => {
-    setNewRow((prevRow) => ({ ...prevRow, [heading]: value }));
+    const dataType = dataTypeSelection[heading] || "text";
+    const invalidInputsCopy = { ...invalidInputs };
+
+    // Check if the data type matches the selection
+    if (
+      (dataType === "text" && !/^[A-Za-z]+$/.test(value)) ||
+      (dataType === "number" && !/^\d+$/.test(value))
+    ) {
+      // Set invalid input message
+      invalidInputsCopy[heading] =
+        dataType === "text"
+          ? "Invalid input. Please enter alphabet characters only."
+          : "Invalid input. Please enter numbers only.";
+    } else {
+      invalidInputsCopy[heading] = ""; // Clear the error message if the input is valid
+    }
+
+    setInvalidInputs(invalidInputsCopy);
+
+    // Update the new row state
+    setNewRow((prevRow) => ({
+      ...prevRow,
+      [heading]: value,
+    }));
   };
 
   const handleDataTypeChange = (heading, dataType) => {
@@ -79,65 +106,30 @@ const SingleApplications = () => {
   };
 
   const handleAddRowClick = () => {
-    // Validate each heading based on the data type
-    const invalidInputsCopy = {};
-    let isDataValid = true; // Initialize isDataValid as true
+    // Check if there are any invalid inputs
+    const hasInvalidInputs = Object.values(invalidInputs).some(
+      (error) => error !== ""
+    );
 
-    Object.keys(newRow).forEach((heading) => {
-      const dataType = dataTypeSelection[heading] || "text";
-      const value = newRow[heading];
-
-      if (dataType === "text" && !/^[A-Za-z]+$/.test(value)) {
-        // Set invalid input for text data type (alphabet only)
-        invalidInputsCopy[heading] =
-          "Invalid input. Please enter alphabet characters only.";
-        isDataValid = false;
-      } else if (dataType === "number" && !/^\d+$/.test(value)) {
-        // Set invalid input for number data type (numbers only)
-        invalidInputsCopy[heading] =
-          "Invalid input. Please enter numbers only.";
-        isDataValid = false;
-      } else {
-        // If the input is valid, remove the invalid flag
-        invalidInputsCopy[heading] = "";
-      }
-    });
-
-    // Check if the data type matches the selection for each heading
-    Object.keys(dataTypeSelection).forEach((heading) => {
-      const dataType = dataTypeSelection[heading] || "text";
-      const value = newRow[heading];
-
-      if (dataType === "text" && !/^[A-Za-z]+$/.test(value)) {
-        // Set invalid input for text data type (alphabet only)
-        invalidInputsCopy[heading] =
-          "Data type does not match selection. Please select 'Text' for alphabet characters.";
-        isDataValid = false;
-      } else if (dataType === "number" && !/^\d+$/.test(value)) {
-        // Set invalid input for number data type (numbers only)
-        invalidInputsCopy[heading] =
-          "Data type does not match selection. Please select 'Number' for numeric values.";
-        isDataValid = false;
-      }
-    });
-
-    // Update state to highlight only invalid inputs
-    setInvalidInputs(invalidInputsCopy);
-
-    // Check valid data, & add the row
-    if (isDataValid) {
-      setApplicationData((prevData) => ({
-        ...prevData,
-        inputValues: {
-          ...prevData.inputValues,
-          rows: [...prevData.inputValues.rows, newRow],
-        },
-      }));
-
-      setNewRow({});
-      setDataTypeSelection({});
-      setInvalidInputs({});
+    // If there are invalid inputs, do not add the row
+    if (hasInvalidInputs) {
+      // Optionally, you can show an alert or handle the invalid inputs in another way
+      return;
     }
+
+    // Proceed with adding the row
+    setApplicationData((prevData) => ({
+      ...prevData,
+      inputValues: {
+        ...prevData.inputValues,
+        rows: [...prevData.inputValues.rows, newRow],
+      },
+    }));
+
+    // Clear the newRow state, data type selection, and invalid inputs
+    setNewRow({});
+    setDataTypeSelection({});
+    setInvalidInputs({});
   };
 
   const handleRemoveRowClick = (rowIndexToRemove) => {
@@ -328,6 +320,7 @@ const SingleApplications = () => {
   };
 
   // import logoImage from "../assets/logo.png";
+  const [logo, setLogo] = useState(null);
 
   const handleExportPdf = () => {
     // Open modal for user information input
@@ -337,6 +330,11 @@ const SingleApplications = () => {
   const handleModalSubmit = () => {
     // Validate input fields
     const newErrors = {};
+
+    // Check if logo is uploaded
+    if (!logo) {
+      newErrors.logo = "Logo is required";
+    }
 
     if (!userInfo.companyName.trim()) {
       newErrors.companyName = "Company Name is required";
@@ -350,8 +348,8 @@ const SingleApplications = () => {
       newErrors.userAddress = "User Address is required";
     }
 
-    if (!userInfo.userDescription.trim()) {
-      newErrors.userDescription = "User Description is required";
+    if (!userInfo.reportDescription.trim()) {
+      newErrors.reportDescription = "Report Description is required";
     }
 
     if (!/^\d{11}$/.test(userInfo.userPhone)) {
@@ -376,9 +374,10 @@ const SingleApplications = () => {
       companyName: "",
       userName: "",
       userAddress: "",
-      userDescription: "",
+      reportDescription: "",
       userPhone: "",
       userEmail: "",
+      logoLink: "",
     });
     // Close modal
     setShowModal(false);
@@ -388,7 +387,7 @@ const SingleApplications = () => {
       companyName,
       userName,
       userAddress,
-      userDescription,
+      reportDescription,
       userPhone,
       userEmail,
     } = userInfo;
@@ -401,63 +400,87 @@ const SingleApplications = () => {
 
       const pdf = new jsPDF();
 
-      // Set background color
-      pdf.setFillColor(255, 255, 204);
-      pdf.rect(
-        0,
-        0,
-        pdf.internal.pageSize.width,
-        pdf.internal.pageSize.height,
-        "F"
-      );
+      // First Page Elements
+      pdf.setFillColor(27, 31, 95); // Blue
+      pdf.rect(0, 0, 20, pdf.internal.pageSize.height, "F"); // Left Column
 
-      // Place smaller logo in the top-left corner
-      pdf.addImage(logoImage, "PNG", 10, 10, 20, 20);
+      // Logo in the top-left corner
+      if (logo) {
+        pdf.addImage(logo, "PNG", 10, 10, 20, 20);
+      }
 
-      // User information box
-      pdf.setDrawColor(0, 150, 255);
-      pdf.setFillColor(200, 230, 255);
-      pdf.roundedRect(30, 50, 150, 60, 3, 3, "FD"); // Draw rounded rectangle
+      // Company Name
+      pdf.setTextColor(27, 31, 95); // black
+      pdf.setFontSize(14);
+      pdf.text(companyName, 35, 22);
 
-      // Set font style to bold and smaller text
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(8);
-
-      // Display "User Information" heading at the center of the box, outside the top
-      pdf.text("User Information", pdf.internal.pageSize.width / 2, 42, {
-        align: "center",
-      });
-
-      // Display user information with adjusted indentation
-      pdf.text(`Company       :     ${companyName}`, 40, 55, { maxWidth: 130 });
-      pdf.text(`Name               :     ${userName}`, 40, 65, {
-        maxWidth: 130,
-      });
-      pdf.text(`Address         :     ${userAddress}`, 40, 75, {
-        maxWidth: 130,
-      });
-      pdf.text(`Description  :     ${userDescription}`, 40, 85, {
-        maxWidth: 130,
-      });
-      pdf.text(`Phone            :     ${userPhone}`, 40, 95, {
-        maxWidth: 130,
-      });
-      pdf.text(`Email             :     ${userEmail}`, 40, 105, {
-        maxWidth: 130,
-      });
-
-      // template name
-      pdf.setTextColor(0, 150, 255);
+      // user description
       pdf.setFontSize(12);
-      pdf.text(
-        `Report for ${templateName} Form`,
-        pdf.internal.pageSize.width / 2,
-        160,
-        { align: "center" }
-      );
+      pdf.setTextColor(45, 151, 245);
+      // Align text to center
+      const descriptionX = pdf.internal.pageSize.width / 2;
+      pdf.text(`${reportDescription}`, descriptionX, 80, { align: "center" });
 
-      // Data table
-      const tableStartY = 180; // Adjust the startY value based on user information box height
+
+      // Report Heading
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(22);
+      pdf.setTextColor(0, 0, 0); // Black
+      // Add current year dynamically
+      const currentYear = new Date().getFullYear();
+      pdf.setTextColor(45, 151, 245);
+      pdf.text(`Report for ${templateName}`, 25, 120);
+      pdf.setTextColor(27, 31, 95);
+      pdf.text(`${currentYear}`, 25, 130);
+
+      // User Information
+      pdf.setFontSize(12);
+      pdf.setTextColor(73, 158, 233); // set Sky Blue
+      pdf.text(`Prepared by    :`, 25, 150);
+      pdf.setTextColor(0, 0, 0); // set to Black
+      pdf.text(`${userName}`, 25, 155);
+      pdf.setTextColor(73, 158, 233); // set Sky Blue
+      pdf.text(`Presented to   :`, 25, 160);
+      pdf.setTextColor(0, 0, 0); // set Black
+      pdf.text(`${companyName}`, 25, 165);
+     // Load icon image
+      const phoneIcon = phone; 
+      const emailIcon = email; 
+      const addressIcon = gps; 
+
+      // Contact Details
+      pdf.setFontSize(10);
+      pdf.addImage(phoneIcon, "PNG", 25, 211 - 5, 5, 5); // Adjust the icon position 
+      pdf.text(`Phone       : ${userPhone}`, 33, 210);
+      pdf.addImage(emailIcon, "PNG", 25, 221 - 5, 5, 5); 
+      pdf.text(`Email        :  ${userEmail}`, 33, 220);
+      pdf.addImage(addressIcon, "PNG", 25, 231 - 5, 5, 5); 
+      pdf.text(`Address   :  ${userAddress}`, 33, 230);
+
+// dynamic download date
+const downloadCurrentDate = new Date();
+const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const formattedDate = `${downloadCurrentDate.getDate()} ${months[downloadCurrentDate.getMonth()]} ${downloadCurrentDate.getFullYear()}`;
+
+// date year center align
+const downloadDateTextWidth = pdf.getStringUnitWidth(`${formattedDate}`) * pdf.internal.getFontSize() / pdf.internal.scaleFactor;
+const textXPosition = (pdf.internal.pageSize.width - downloadDateTextWidth) / 2;
+
+// current day month year
+pdf.setTextColor(27, 31, 95);
+pdf.text(`${formattedDate}`, textXPosition, 270); 
+
+
+
+      // // Add current year dynamically
+      // const currentYear = new Date().getFullYear();
+      // pdf.text(`Report for ${templateName} with ${currentYear}`, 10, 120);
+
+      // Add table data and footer on the second page
+      pdf.addPage(); // Add a new page
+
+      // Data Table Section
+      const tableStartY = 40; // Adjust startY for aesthetic design
       const tableHeaders = ["Sl No", ...headings];
       const tableData = rows.map((row, index) => [
         index + 1,
@@ -470,28 +493,18 @@ const SingleApplications = () => {
         startY: tableStartY,
       });
 
-      // Add current date and time
-      const currentDate = new Date().toLocaleString();
-      pdf.setTextColor(255, 0, 0);
-      pdf.setFontSize(8);
-      pdf.text(
-        `Download date: ${currentDate}`,
-        pdf.internal.pageSize.width - 10,
-        10,
-        { align: "right" }
-      );
-
-      // Add a styled footer at the bottom of the PDF
-      pdf.setFillColor(0, 150, 255);
+      // Add footer on the second page
+      pdf.setPage(2); // Set the active page to the second page
+      pdf.setFillColor(0, 150, 255); // Blue
       pdf.rect(
         0,
         pdf.internal.pageSize.height - 20,
         pdf.internal.pageSize.width,
         20,
         "F"
-      ); // Draw rectangle covering the full width of the page
+      );
       pdf.setTextColor(255, 255, 255);
-      pdf.setFont("helvetica", "normal"); // Set font style back to normal
+      pdf.setFont("helvetica", "normal");
       pdf.setFontSize(10);
       pdf.text(
         "Thank you for using our Dynamic Form system. For inquiries, contact support@example.com.",
@@ -500,10 +513,22 @@ const SingleApplications = () => {
         { align: "center", baseline: "middle" }
       );
 
-      pdf.save(`exported_data_${applicationId}_${currentDate}.pdf`);
+      const downloadDate = new Date().toLocaleString();
+      pdf.save(`exported_data_${applicationId}_${downloadDate}.pdf`);
     } catch (error) {
       console.error("Error exporting PDF:", error);
       alert("Error exporting PDF. Please check the console for details.");
+    }
+  };
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogo(reader.result); // Set the uploaded logo to state
+    };
+    if (file) {
+      reader.readAsDataURL(file);
     }
   };
 
@@ -614,6 +639,7 @@ const SingleApplications = () => {
                     <input
                       type={dataTypeSelection[heading] || "text"}
                       value={newRow[heading] || ""}
+                      min="0"
                       placeholder={heading}
                       className={`w-full border rounded px-1 py-1 my-1 text-sm border-blue-500 ${
                         invalidInputs[heading] ? "border-red-500" : ""
@@ -688,12 +714,32 @@ const SingleApplications = () => {
             >
               Cancel
             </button>
+            {/* <button
+              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-sm text-white transition-transform transform hover:scale-105"
+              onClick={handleAddRowClick}
+            >
+              Add Row
+            </button> */}
+            {Object.keys(newRow).map((heading) => (
+              <div key={heading}>
+                {/* <input
+          type="text"
+          value={newRow[heading]}
+          onChange={(e) => handleInputChange(heading, e.target.value)}
+          style={{ borderColor: invalidInputs[heading] ? 'red' : '' }}
+        /> */}
+                {/* {invalidInputs[heading] && (
+          <span style={{ color: 'red' }}>{invalidInputs[heading]}</span>
+        )} */}
+              </div>
+            ))}
             <button
               className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-sm text-white transition-transform transform hover:scale-105"
               onClick={handleAddRowClick}
             >
               Add Row
             </button>
+
             <button
               className="px-6 py-2 ml-2 bg-blue-600 hover:bg-blue-500 text-white transition-transform transform hover:scale-105"
               onClick={handleSaveClick}
@@ -785,19 +831,19 @@ const SingleApplications = () => {
             </div>
             <div className="mb-2">
               <label className="block text-sm font-medium text-gray-700">
-                User Description<span className="text-red-500">*</span>
+                Report Description<span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                value={userInfo.userDescription}
+                value={userInfo.reportDescription}
                 onChange={(e) =>
-                  setUserInfo({ ...userInfo, userDescription: e.target.value })
+                  setUserInfo({ ...userInfo, reportDescription: e.target.value })
                 }
                 className="w-full p-2 border rounded"
                 required
               />
-              {errors.userDescription && (
-                <p className="text-red-500 text-sm">{errors.userDescription}</p>
+              {errors.reportDescription && (
+                <p className="text-red-500 text-sm">{errors.reportDescription}</p>
               )}
             </div>
             <div className="mb-2">
@@ -834,6 +880,16 @@ const SingleApplications = () => {
                 <p className="text-red-500 text-sm">{errors.userEmail}</p>
               )}
             </div>
+            <label className="block text-sm font-medium text-gray-700">
+              Logo<span className="text-red-500">*</span>
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoChange}
+              className="w-full p-2 border rounded"
+            />
+            {errors.logo && <p>{errors.logo}</p>}
             <button
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white transition-transform transform hover:scale-105"
               onClick={handleModalSubmit}
@@ -842,7 +898,7 @@ const SingleApplications = () => {
             </button>
           </div>
         </div>
-      )}      
+      )}
     </div>
   );
 };

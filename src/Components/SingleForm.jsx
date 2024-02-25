@@ -44,18 +44,23 @@ const SingleForm = () => {
 
   const handleInputChange = (heading, value) => {
     if (!editMode) {
+      // Check if the value is empty and set an error message
+      const errorMessage = value.trim() === "" ? "This field is required." : null;
+  
       setInputValues((prevValues) => ({
         ...prevValues,
         [heading]: value,
       }));
-
-      // Check if the value is empty and set an error message
+  
+      // Set the error message for the input field
       setInputErrors((prevErrors) => ({
         ...prevErrors,
-        [heading]: value.trim() === "" ? "This field is required." : null,
+        [heading]: errorMessage,
       }));
     }
   };
+  
+  
 
   const handleTemplateNameChange = (e) => {
     setFormData((prevData) => ({
@@ -67,43 +72,80 @@ const SingleForm = () => {
   const navigate = useNavigate();
 
   const handleSubmitForm = async () => {
-    try {
-      // Check if any input field is empty
-      if (Object.values(inputValues).some((value) => value.trim() === "")) {
-        // Display popup if there are errors
-        setShowPopup(true);
-        return;
-      }
+  try {
+    // Check if any input field is empty in any row
+    const hasEmptyFields = Object.keys(inputValues).some((key) => {
+      const value = inputValues[key];
+      return value.trim() === "";
+    });
 
-      // Group input values by Sl No
-      const groupedInputValues = {};
-      Object.entries(inputValues).forEach(([key, value]) => {
-        const [heading, slNo] = key.split("-");
-        if (!groupedInputValues[slNo]) {
-          groupedInputValues[slNo] = { slNo };
-        }
-        groupedInputValues[slNo][heading] = value;
-      });
-
-      // Convert grouped input values to an array
-      const rows = Object.values(groupedInputValues);
-
-      const response = await axios.post("http://localhost:5000/application", {
-        formId,
-        templateName: formData.templateName,
-        inputValues: {
-          headings: formData.headings,
-          rows,
-        },
-      });
-
-      console.log("Form submitted successfully:", response.data);
-
-      navigate("/allForms");
-    } catch (error) {
-      console.error("Error submitting form:", error.message);
+    if (hasEmptyFields) {
+      // Display popup if there are errors
+      setShowPopup(true);
+      return;
     }
-  };
+
+    // Initialize grouped input values
+    const groupedInputValues = {};
+
+    // Iterate through each row index
+    for (let i = 0; i < formData.rows.length; i++) {
+      // Check if all input fields in this row are filled out
+      const isRowComplete = formData.headings.every((heading, index) => {
+        const value = inputValues[`${heading}-${i}`];
+        return value.trim() !== ""; // Check if the value is not empty
+      });
+
+      if (isRowComplete) {
+        // Initialize an object to hold input values for the current row
+        const rowValues = {};
+
+        // Iterate through each heading to gather input values for the current row
+        formData.headings.forEach((heading, index) => {
+          const value = inputValues[`${heading}-${i}`];
+          const dataType = formData.headingsDataType[index];
+
+          // Validate data type for the column
+          if (dataType === "number" && isNaN(Number(value))) {
+            throw new Error(`Invalid value for column ${heading}: ${value} is not a number.`);
+          } else if (dataType === "text" && !/^[a-zA-Z]+$/.test(value.trim())) {
+            throw new Error(`Invalid value for column ${heading}: ${value} contains non-alphabetic characters.`);
+          } else if (dataType === "string" && typeof value !== "string") {
+            throw new Error(`Invalid value for column ${heading}: ${value} is not a string.`);
+          }
+
+          rowValues[heading] = value;
+        });
+
+        // Add the current row to grouped input values
+        groupedInputValues[i] = rowValues;
+      }
+    }
+
+    // Convert grouped input values to an array
+    const rows = Object.values(groupedInputValues);
+
+    const response = await axios.post("http://localhost:5000/application", {
+      formId,
+      templateName: formData.templateName,
+      inputValues: {
+        headings: formData.headings,
+        rows,
+      },
+    });
+
+    console.log("Form submitted successfully:", response.data);
+
+    navigate("/allForms");
+  } catch (error) {
+    console.error("Error submitting form:", error.message);
+  }
+};
+
+  
+  
+  
+  
 
   const addHeading = () => {
     setFormData((prevData) => ({

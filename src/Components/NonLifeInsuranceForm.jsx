@@ -1,31 +1,22 @@
 import { useState } from "react";
 import axios from "axios";
+// import * as XLSX from "xlsx";
 
 const NonLifeInsuranceForm = () => {
   const [form, setForm] = useState({
     templateName: "",
     headings: [],
+    headingsDataType: [],
     rows: [],
   });
 
+  const [selectedDataType, setSelectedDataType] = useState("text");
   const [isAddHeadingModalOpen, setIsAddHeadingModalOpen] = useState(false);
   const [newHeading, setNewHeading] = useState("");
-
-  const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] =
-    useState(false);
+  const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState("");
-
   const [headingsAdded, setHeadingsAdded] = useState(false);
   const [isTemplateCreated, setIsTemplateCreated] = useState(false);
-
-  const openAddHeadingModal = () => {
-    setIsAddHeadingModalOpen(true);
-  };
-
-  const closeAddHeadingModal = () => {
-    setIsAddHeadingModalOpen(false);
-    setNewHeading("");
-  };
 
   const openCreateTemplateModal = () => {
     setIsCreateTemplateModalOpen(true);
@@ -36,15 +27,28 @@ const NonLifeInsuranceForm = () => {
     setNewTemplateName("");
   };
 
+  const openAddHeadingModal = () => {
+    setIsAddHeadingModalOpen(true);
+  };
+
+  const closeAddHeadingModal = () => {
+    setIsAddHeadingModalOpen(false);
+    setNewHeading("");
+  };
+
   const addHeading = () => {
     if (newHeading.trim() !== "") {
       setForm((prevForm) => ({
         ...prevForm,
         headings: [...prevForm.headings, newHeading],
+        headingsDataType: [...prevForm.headingsDataType, selectedDataType],
       }));
       closeAddHeadingModal();
-      setHeadingsAdded(true);
     }
+  };
+
+  const handleDataTypeChange = (e) => {
+    setSelectedDataType(e.target.value);
   };
 
   const createTemplate = () => {
@@ -61,8 +65,9 @@ const NonLifeInsuranceForm = () => {
   const addRow = () => {
     setForm((prevForm) => {
       const newRow = { "Sl No": prevForm.rows.length + 1 };
-      prevForm.headings.forEach((heading) => {
-        newRow[heading] = "";
+      prevForm.headings.forEach((heading, index) => {
+        newRow[heading] = ""; // Initialize with an empty string
+        newRow[`${heading}-type`] = prevForm.headingsDataType[index]; // Set the data type for the column
       });
       return {
         ...prevForm,
@@ -79,92 +84,65 @@ const NonLifeInsuranceForm = () => {
     });
   };
 
-  // const addSubRow = (slNo) => {
-  //   setForm((prevForm) => {
-  //     const subRow = {
-  //       "Sl No": `(${getRomanNumeral(slNo)})`,
-  //     };
-  //     prevForm.headings.forEach((heading) => {
-  //       subRow[heading] = "";
-  //     });
-  //     const updatedRows = [...prevForm.rows];
-  //     updatedRows.splice(slNo, 0, subRow);
-  //     return { ...prevForm, rows: updatedRows };
-  //   });
-  // };
-
-  // const handleInputChange = (rowIndex, key, value) => {
-  //   setForm((prevForm) => {
-  //     const updatedRows = [...prevForm.rows];
-  //     updatedRows[rowIndex][key] = value;
-  //     return { ...prevForm, rows: updatedRows };
-  //   });
-  // };
-
   const removeHeading = (index) => {
     setForm((prevForm) => {
       const updatedHeadings = [...prevForm.headings];
       updatedHeadings.splice(index, 1);
 
-      // Remove the corresponding column from each row
+      const updatedHeadingsDataType = [...prevForm.headingsDataType];
+      updatedHeadingsDataType.splice(index, 1);
+
       const updatedRows = prevForm.rows.map((row) => {
         const updatedRow = { ...row };
         delete updatedRow[prevForm.headings[index]];
         return updatedRow;
       });
 
-      return { ...prevForm, headings: updatedHeadings, rows: updatedRows };
+      return { ...prevForm, headings: updatedHeadings, headingsDataType: updatedHeadingsDataType, rows: updatedRows };
     });
   };
 
-  // const getRomanNumeral = (number) => {
-  //   const romanNumerals = [
-  //     "i",
-  //     "ii",
-  //     "iii",
-  //     "iv",
-  //     "v",
-  //     "vi",
-  //     "vii",
-  //     "viii",
-  //     "ix",
-  //     "x",
-  //   ];
-  //   return romanNumerals[number - 1] || "";
-  // };
-
   const handleSubmitForm = async () => {
     try {
-      // Handle form submission logic here
       console.log("Form Submitted:", { form });
-
-      // Your backend endpoint
-      // const endpoint = "http://localhost:5000/submits";
-      // const endpoint = "http://localhost:5000/submits";
       const endpoint = "http://localhost:5000/submits";
-
-      // Make the HTTP POST request
-      const response = await axios.post(endpoint, form);
-
-      // Reset the state variables if the request was successful
+      const payload = {
+        templateName: form.templateName,
+        headings: form.headings,
+        headingsDataType: form.headingsDataType, // Include headingsDataType in the payload
+        rows: form.rows,
+      };
+      const response = await axios.post(endpoint, payload); // Send payload instead of form directly
       if (response.status === 200) {
         setForm({
           templateName: "",
           headings: [],
+          headingsDataType: [],
           rows: [],
         });
-        setIsTemplateCreated(false);
-
         console.log("Form data successfully submitted to the backend.");
       } else {
-        // Handle error scenario
         console.error("Failed to submit form data to the backend.");
       }
     } catch (error) {
-      // Handle exception
       console.error("An error occurred:", error);
     }
   };
+  
+
+  // const saveForm = async () => {
+  //   try {
+  //     // Make a POST request to save the form data
+  //     const response = await axios.post("http://localhost:5000/submits", form);
+  //     if (response.status === 200) {
+  //       console.log("Form data saved successfully.");
+  //     } else {
+  //       console.error("Failed to save form data.");
+  //     }
+  //   } catch (error) {
+  //     console.error("An error occurred while saving form data:", error);
+  //   }
+  // };
 
   return (
     <div className="container mx-auto mt-8 p-4">
@@ -177,6 +155,13 @@ const NonLifeInsuranceForm = () => {
           >
             Create Template
           </button>
+          {/* <button
+            type="button"
+            className="bg-green-500 text-white px-4 py-2 rounded transition-transform transform hover:scale-105"
+            onClick={saveForm}
+          >
+            Save Form
+          </button> */}
         </div>
       )}
 
@@ -312,6 +297,19 @@ const NonLifeInsuranceForm = () => {
               onChange={(e) => setNewHeading(e.target.value)}
               className="w-full mb-2 p-2 border rounded"
             />
+            <label htmlFor="dataType" className="block mb-2 text-lg font-bold">
+              Data Type:
+            </label>
+            <select
+              id="dataType"
+              value={selectedDataType}
+              onChange={handleDataTypeChange}
+              className="w-full mb-2 p-2 border rounded"
+            >
+              <option value="text">Text</option>
+              <option value="number">Number</option>
+              <option value="string">String</option>
+            </select>
             <div className="flex justify-end">
               <button
                 type="button"
@@ -379,6 +377,40 @@ const NonLifeInsuranceForm = () => {
           </button>
         )}
       </div>
+      {/* <div>
+        <input
+          type="file"
+          accept=".xlsx, .xls"
+          onChange={handleFileUpload}
+          className="mb-4"
+        />
+        {excelData && (
+          <table className="w-full border mb-4">
+            <thead>
+              <tr>
+                {excelData[0].slice(2).map((header, index) => (
+                  <th key={index} className="border px-4 py-2">
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {excelData.slice(1).map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  <td className="border px-4 py-2">{row[0]}</td>
+                  <td className="border px-4 py-2">{row[1]}</td>
+                  {row.slice(2).map((cell, cellIndex) => (
+                    <td key={cellIndex} className="border px-4 py-2">
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div> */}
     </div>
   );
 };
