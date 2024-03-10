@@ -15,6 +15,7 @@ const SingleApplications = () => {
     inputValues: {
       headings: [],
       rows: [],
+      headingsDataType: [], // Add headingsDataType state
     },
   });
   const [loading, setLoading] = useState(true);
@@ -22,15 +23,10 @@ const SingleApplications = () => {
   const [newRow, setNewRow] = useState({});
   const [newHeading, setNewHeading] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [dataTypeSelection, setDataTypeSelection] = useState({});
   const [invalidInputs, setInvalidInputs] = useState({});
-  // const getUserInformation = () => {
-  //   const userName = prompt("Enter your name:");
-  //   const userDate = prompt("Enter the report date:");
-  //   return { userName, userDate };
-  // };
-  // New state variables for modal
-  // const [logoLink, setLogoLink] = useState("");
+
+  // const [headingsDataType, setHeadingsDataType] = useState({});
+  const [selectedDataType, setSelectedDataType] = useState("text");
   const [showModal, setShowModal] = useState(false);
   const [userInfo, setUserInfo] = useState({
     companyName: "",
@@ -72,36 +68,36 @@ const SingleApplications = () => {
   };
 
   const handleInputChange = (heading, value) => {
-    const dataType = dataTypeSelection[heading] || "text";
-    const invalidInputsCopy = { ...invalidInputs };
+    // Retrieve the expected data type for the current heading
+    const expectedDataType = applicationData.inputValues.headingsDataType.find(
+      (dataType, index) =>
+        applicationData.inputValues.headings[index] === heading
+    );
 
-    // Check if the data type matches the selection
-    if (
-      (dataType === "text" && !/^[A-Za-z]+$/.test(value)) ||
-      (dataType === "number" && !/^\d+$/.test(value))
-    ) {
-      // Set invalid input message
-      invalidInputsCopy[heading] =
-        dataType === "text"
-          ? "Invalid input. Please enter alphabet characters only."
-          : "Invalid input. Please enter numbers only.";
-    } else {
-      invalidInputsCopy[heading] = ""; // Clear the error message if the input is valid
+    // Validate the input data type
+    let isValid = true;
+    let errorMessage = "";
+
+    if (expectedDataType === "number") {
+      isValid = /^[0-9]+(\.[0-9]+)?$/.test(value); // Only numeric characters allowed
+      errorMessage = "Only numeric characters allowed";
+    } else if (expectedDataType === "text") {
+      isValid = /^[A-Za-z\s]+$/.test(value); // Alphabet characters and white spaces allowed
+      errorMessage = "Only alphabet characters allowed";
+    } else if (expectedDataType === "string") {
+      // No specific validation for string type
     }
 
-    setInvalidInputs(invalidInputsCopy);
-
-    // Update the new row state
+    // Update the new row state and invalidInputs state
     setNewRow((prevRow) => ({
       ...prevRow,
       [heading]: value,
     }));
-  };
 
-  const handleDataTypeChange = (heading, dataType) => {
-    setDataTypeSelection((prevSelection) => ({
-      ...prevSelection,
-      [heading]: dataType,
+    // Update the invalidInputs state based on the validation result
+    setInvalidInputs((prevInvalidInputs) => ({
+      ...prevInvalidInputs,
+      [heading]: isValid ? "" : errorMessage,
     }));
   };
 
@@ -117,19 +113,50 @@ const SingleApplications = () => {
       return;
     }
 
-    // Proceed with adding the row
-    setApplicationData((prevData) => ({
-      ...prevData,
-      inputValues: {
-        ...prevData.inputValues,
-        rows: [...prevData.inputValues.rows, newRow],
-      },
-    }));
+    // Validate data type for each input value
+    const isValidRow = Object.entries(newRow).every(([heading, value]) => {
+      // Get the index of the heading
+      const headingIndex =
+        applicationData.inputValues.headings.indexOf(heading);
 
-    // Clear the newRow state, data type selection, and invalid inputs
-    setNewRow({});
-    setDataTypeSelection({});
-    setInvalidInputs({});
+      // Get the data type for the corresponding heading
+      const dataType =
+        applicationData.inputValues.headingsDataType[headingIndex];
+
+      // Perform data type validation
+      switch (dataType) {
+        case "text":
+          // No validation needed for text type
+          return true;
+        case "number":
+          // Validate if the value is a valid number
+          return !isNaN(value);
+        case "string":
+          // No specific validation for string type
+          return typeof value === "string";
+        default:
+          return true;
+      }
+    });
+
+    // If the row is valid, proceed with adding the row
+    if (isValidRow) {
+      setApplicationData((prevData) => ({
+        ...prevData,
+        inputValues: {
+          ...prevData.inputValues,
+          rows: [...prevData.inputValues.rows, newRow],
+        },
+      }));
+
+      // Clear the newRow state, data type selection, and invalid inputs
+      setNewRow({});
+      // setDataTypeSelection({});
+      setInvalidInputs({});
+    } else {
+      // If the row is invalid, display an error message
+      alert("Invalid data type for one or more fields.");
+    }
   };
 
   const handleRemoveRowClick = (rowIndexToRemove) => {
@@ -177,35 +204,83 @@ const SingleApplications = () => {
         }
 
         const existingRows = applicationData.inputValues.rows;
+        const invalidCells = [];
 
-        const matchedRows = excelData
-          .slice(2)
-          .map((row) => {
-            const newRow = {};
-            templateHeadings.forEach((heading, index) => {
-              newRow[heading] = row[index];
-            });
-            return newRow;
-          })
-          .filter((newRow) => {
-            return !existingRows.some((existingRow) => {
-              return templateHeadings.every(
-                (heading) => existingRow[heading] === newRow[heading]
-              );
-            });
-          });
+        excelData.slice(2).forEach((row, rowIndex) => {
+          const existingRow = existingRows[rowIndex];
 
-        if (matchedRows.length > 0) {
+          const updatedRow = templateHeadings.reduce((acc, heading, index) => {
+            const newValue = row[index];
+            const oldValue = existingRow ? existingRow[heading] : null;
+
+            const expectedDataType =
+              applicationData.inputValues.headingsDataType[index];
+
+            // Perform data type validation
+            switch (expectedDataType) {
+              case "text":
+                if (!/^[A-Za-z\s]+$/.test(newValue)) {
+                  invalidCells.push({
+                    rowIndex: rowIndex + 3,
+                    invalidColumns: [heading],
+                  });
+                  return acc;
+                }
+                break;
+              case "number":
+                if (isNaN(newValue)) {
+                  invalidCells.push({
+                    rowIndex: rowIndex + 3,
+                    invalidColumns: [heading],
+                  });
+                  return acc;
+                }
+                break;
+              case "string":
+                if (typeof newValue !== "string") {
+                  invalidCells.push({
+                    rowIndex: rowIndex + 3,
+                    invalidColumns: [heading],
+                  });
+                  return acc;
+                }
+                break;
+              default:
+                break;
+            }
+
+            if (newValue !== oldValue) {
+              acc[heading] = newValue;
+            } else {
+              acc[heading] = oldValue;
+            }
+
+            return acc;
+          }, {});
+
+          if (Object.keys(updatedRow).length > 0) {
+            existingRows[rowIndex] = updatedRow;
+          }
+        });
+
+        if (invalidCells.length > 0) {
+          const errorMessage = invalidCells
+            .map(({ rowIndex, invalidColumns }) => {
+              return `Row ${rowIndex}: Invalid data in column(s) ${invalidColumns.join(
+                ", "
+              )}`;
+            })
+            .join("\n");
+          alert(errorMessage);
+        } else {
           setApplicationData((prevData) => ({
             ...prevData,
             inputValues: {
               ...prevData.inputValues,
-              rows: [...prevData.inputValues.rows, ...matchedRows],
+              rows: existingRows,
             },
           }));
-          alert("Excel data imported successfully!");
-        } else {
-          alert("No new data found in the Excel file.");
+          alert("Excel data updated successfully!");
         }
       };
 
@@ -254,6 +329,12 @@ const SingleApplications = () => {
     XLSX.writeFile(workbook, `exported_data_${applicationId}.xlsx`);
   };
 
+  // Function to handle data type selection change
+  const handleDataTypeChange = (e) => {
+    setSelectedDataType(e.target.value);
+  };
+
+  // Update handleAddHeadingClick function to include data type
   const handleAddHeadingClick = () => {
     if (newHeading.trim() === "") {
       alert("Heading name cannot be empty");
@@ -262,11 +343,13 @@ const SingleApplications = () => {
 
     setApplicationData((prevData) => {
       const updatedHeadings = [...prevData.inputValues.headings, newHeading];
+      const updatedHeadingsDataType = [
+        ...prevData.inputValues.headingsDataType,
+        selectedDataType,
+      ];
       const updatedRows = prevData.inputValues.rows.map((row) => {
-        return {
-          ...row,
-          [newHeading]: "",
-        };
+        const newRow = { ...row, [newHeading]: "" };
+        return newRow;
       });
 
       return {
@@ -274,6 +357,7 @@ const SingleApplications = () => {
         inputValues: {
           ...prevData.inputValues,
           headings: updatedHeadings,
+          headingsDataType: updatedHeadingsDataType,
           rows: updatedRows,
         },
       };
@@ -287,7 +371,10 @@ const SingleApplications = () => {
       const updatedHeadings = prevData.inputValues.headings.filter(
         (_, index) => index !== headingIndexToRemove
       );
-
+      const updatedHeadingsDataType =
+        prevData.inputValues.headingsDataType.filter(
+          (_, index) => index !== headingIndexToRemove
+        );
       const updatedRows = prevData.inputValues.rows.map((row) => {
         const newRow = { ...row };
         delete newRow[prevData.inputValues.headings[headingIndexToRemove]];
@@ -299,6 +386,7 @@ const SingleApplications = () => {
         inputValues: {
           ...prevData.inputValues,
           headings: updatedHeadings,
+          headingsDataType: updatedHeadingsDataType,
           rows: updatedRows,
         },
       };
@@ -308,8 +396,13 @@ const SingleApplications = () => {
   const handleSaveClick = async () => {
     try {
       await axios.patch(`http://localhost:5000/applications/${applicationId}`, {
-        inputValues: applicationData.inputValues,
+        inputValues: {
+          headings: applicationData.inputValues.headings,
+          headingsDataType: applicationData.inputValues.headingsDataType,
+          rows: applicationData.inputValues.rows,
+        },
       });
+      console.log(applicationData.inputValues.headingsDataType);
 
       alert("Data saved successfully!");
       setIsEditing(false);
@@ -421,7 +514,6 @@ const SingleApplications = () => {
       const descriptionX = pdf.internal.pageSize.width / 2;
       pdf.text(`${reportDescription}`, descriptionX, 80, { align: "center" });
 
-
       // Report Heading
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(22);
@@ -443,34 +535,51 @@ const SingleApplications = () => {
       pdf.text(`Presented to   :`, 25, 160);
       pdf.setTextColor(0, 0, 0); // set Black
       pdf.text(`${companyName}`, 25, 165);
-     // Load icon image
-      const phoneIcon = phone; 
-      const emailIcon = email; 
-      const addressIcon = gps; 
+      // Load icon image
+      const phoneIcon = phone;
+      const emailIcon = email;
+      const addressIcon = gps;
 
       // Contact Details
       pdf.setFontSize(10);
-      pdf.addImage(phoneIcon, "PNG", 25, 211 - 5, 5, 5); // Adjust the icon position 
+      pdf.addImage(phoneIcon, "PNG", 25, 211 - 5, 5, 5); // Adjust the icon position
       pdf.text(`Phone       : ${userPhone}`, 33, 210);
-      pdf.addImage(emailIcon, "PNG", 25, 221 - 5, 5, 5); 
+      pdf.addImage(emailIcon, "PNG", 25, 221 - 5, 5, 5);
       pdf.text(`Email        :  ${userEmail}`, 33, 220);
-      pdf.addImage(addressIcon, "PNG", 25, 231 - 5, 5, 5); 
+      pdf.addImage(addressIcon, "PNG", 25, 231 - 5, 5, 5);
       pdf.text(`Address   :  ${userAddress}`, 33, 230);
 
-// dynamic download date
-const downloadCurrentDate = new Date();
-const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const formattedDate = `${downloadCurrentDate.getDate()} ${months[downloadCurrentDate.getMonth()]} ${downloadCurrentDate.getFullYear()}`;
+      // dynamic download date
+      const downloadCurrentDate = new Date();
+      const months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+      const formattedDate = `${downloadCurrentDate.getDate()} ${
+        months[downloadCurrentDate.getMonth()]
+      } ${downloadCurrentDate.getFullYear()}`;
 
-// date year center align
-const downloadDateTextWidth = pdf.getStringUnitWidth(`${formattedDate}`) * pdf.internal.getFontSize() / pdf.internal.scaleFactor;
-const textXPosition = (pdf.internal.pageSize.width - downloadDateTextWidth) / 2;
+      // date year center align
+      const downloadDateTextWidth =
+        (pdf.getStringUnitWidth(`${formattedDate}`) *
+          pdf.internal.getFontSize()) /
+        pdf.internal.scaleFactor;
+      const textXPosition =
+        (pdf.internal.pageSize.width - downloadDateTextWidth) / 2;
 
-// current day month year
-pdf.setTextColor(27, 31, 95);
-pdf.text(`${formattedDate}`, textXPosition, 270); 
-
-
+      // current day month year
+      pdf.setTextColor(27, 31, 95);
+      pdf.text(`${formattedDate}`, textXPosition, 270);
 
       // // Add current year dynamically
       // const currentYear = new Date().getFullYear();
@@ -532,6 +641,37 @@ pdf.text(`${formattedDate}`, textXPosition, 270);
     }
   };
 
+  const handleEditHeadingClick = (headingIndexToEdit, newHeadingName) => {
+    setApplicationData((prevData) => {
+      const updatedHeadings = prevData.inputValues.headings.map(
+        (heading, index) => {
+          if (index === headingIndexToEdit) {
+            return newHeadingName;
+          }
+          return heading;
+        }
+      );
+
+      const updatedRows = prevData.inputValues.rows.map((row) => {
+        const newRow = { ...row };
+        const oldHeading = prevData.inputValues.headings[headingIndexToEdit];
+        const newValue = row[oldHeading];
+        delete newRow[oldHeading];
+        newRow[newHeadingName] = newValue;
+        return newRow;
+      });
+
+      return {
+        ...prevData,
+        inputValues: {
+          ...prevData.inputValues,
+          headings: updatedHeadings,
+          rows: updatedRows,
+        },
+      };
+    });
+  };
+
   if (loading) {
     return <p className="text-center mt-8 text-blue-500">Loading...</p>;
   }
@@ -567,15 +707,35 @@ pdf.text(`${formattedDate}`, textXPosition, 270);
                 >
                   {heading}
                   {isEditing && (
-                    <button
-                      className="text-red-600 hover:text-red-500 ml-1 transform hover:scale-125"
-                      onClick={() => handleRemoveHeadingClick(index)}
-                    >
-                      &#10005; Remove
-                    </button>
+                    <>
+                      <button
+                        className="text-red-600 hover:text-red-500 ml-1 transform hover:scale-125"
+                        onClick={() => handleRemoveHeadingClick(index)}
+                      >
+                        &#10005; Remove
+                      </button>
+                      <br />
+                      <button
+                        className="text-sm text-white hover:text-yellow-500 ml-1 transform hover:scale-125"
+                        onClick={() => {
+                          const newHeadingName = prompt(
+                            "Update the heading name:"
+                          );
+                          if (
+                            newHeadingName !== null &&
+                            newHeadingName.trim() !== ""
+                          ) {
+                            handleEditHeadingClick(index, newHeadingName);
+                          }
+                        }}
+                      >
+                        &#9998; Edit
+                      </button>
+                    </>
                   )}
                 </th>
               ))}
+
             {isEditing && (
               <th className="border px-4 py-2 text-center">
                 <input
@@ -585,6 +745,15 @@ pdf.text(`${formattedDate}`, textXPosition, 270);
                   className="w-full border rounded px-1 py-1 my-1 text-sm border-blue-500 text-gray-700"
                   onChange={(e) => setNewHeading(e.target.value)}
                 />
+                <select
+                  className="border rounded px-1 py-1 my-1 text-sm border-blue-500 text-gray-700"
+                  value={selectedDataType}
+                  onChange={handleDataTypeChange}
+                >
+                  <option value="text">Text</option>
+                  <option value="number">Number</option>
+                  <option value="string">String</option>
+                </select>
                 <button
                   className="text-white hover:text-green-400 ml-1 transform hover:scale-105"
                   onClick={handleAddHeadingClick}
@@ -593,6 +762,7 @@ pdf.text(`${formattedDate}`, textXPosition, 270);
                 </button>
               </th>
             )}
+
             {isEditing && (
               <th className="border px-4 py-2 text-center">Actions</th>
             )}
@@ -637,7 +807,6 @@ pdf.text(`${formattedDate}`, textXPosition, 270);
                 <td key={headingIndex} className="border px-4 py-2 text-center">
                   <div className="flex items-center">
                     <input
-                      type={dataTypeSelection[heading] || "text"}
                       value={newRow[heading] || ""}
                       min="0"
                       placeholder={heading}
@@ -649,28 +818,10 @@ pdf.text(`${formattedDate}`, textXPosition, 270);
                       }
                     />
                     {invalidInputs[heading] && (
-                      <p className="text-red-500 text-xs mt-1 ml-2">
-                        Invalid input. Please enter{" "}
-                        {dataTypeSelection[heading] === "text"
-                          ? "alphabet characters"
-                          : dataTypeSelection[heading] === "number"
-                          ? "numbers"
-                          : "alphabet characters"}{" "}
-                        only.
-                      </p>
+                      <span className="text-red-500 text-sm ml-1">
+                        {invalidInputs[heading]}
+                      </span>
                     )}
-
-                    <select
-                      value={dataTypeSelection[heading] || "text"}
-                      onChange={(e) =>
-                        handleDataTypeChange(heading, e.target.value)
-                      }
-                      className="ml-2 p-1 border border-blue-500"
-                    >
-                      <option value="text">Text</option>
-                      <option value="number">Number</option>
-                      {/* Add more data types as needed */}
-                    </select>
                   </div>
                 </td>
               ))}
@@ -714,24 +865,8 @@ pdf.text(`${formattedDate}`, textXPosition, 270);
             >
               Cancel
             </button>
-            {/* <button
-              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-sm text-white transition-transform transform hover:scale-105"
-              onClick={handleAddRowClick}
-            >
-              Add Row
-            </button> */}
             {Object.keys(newRow).map((heading) => (
-              <div key={heading}>
-                {/* <input
-          type="text"
-          value={newRow[heading]}
-          onChange={(e) => handleInputChange(heading, e.target.value)}
-          style={{ borderColor: invalidInputs[heading] ? 'red' : '' }}
-        /> */}
-                {/* {invalidInputs[heading] && (
-          <span style={{ color: 'red' }}>{invalidInputs[heading]}</span>
-        )} */}
-              </div>
+              <div key={heading}></div>
             ))}
             <button
               className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-sm text-white transition-transform transform hover:scale-105"
@@ -837,13 +972,18 @@ pdf.text(`${formattedDate}`, textXPosition, 270);
                 type="text"
                 value={userInfo.reportDescription}
                 onChange={(e) =>
-                  setUserInfo({ ...userInfo, reportDescription: e.target.value })
+                  setUserInfo({
+                    ...userInfo,
+                    reportDescription: e.target.value,
+                  })
                 }
                 className="w-full p-2 border rounded"
                 required
               />
               {errors.reportDescription && (
-                <p className="text-red-500 text-sm">{errors.reportDescription}</p>
+                <p className="text-red-500 text-sm">
+                  {errors.reportDescription}
+                </p>
               )}
             </div>
             <div className="mb-2">

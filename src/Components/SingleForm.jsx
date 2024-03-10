@@ -12,6 +12,7 @@ const SingleForm = () => {
   const [inputErrors, setInputErrors] = useState({});
   const [editMode, setEditMode] = useState(false);
   const [newHeading, setNewHeading] = useState("");
+  const [selectedDataType, setSelectedDataType] = useState("text"); // New state for selected data type
   // const [fileUploadError, setFileUploadError] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
 
@@ -44,14 +45,35 @@ const SingleForm = () => {
 
   const handleInputChange = (heading, value) => {
     if (!editMode) {
-      // Check if the value is empty and set an error message
-      const errorMessage = value.trim() === "" ? "This field is required." : null;
-  
       setInputValues((prevValues) => ({
         ...prevValues,
         [heading]: value,
       }));
-  
+
+      setInputErrors((prevErrors) => ({
+        ...prevErrors,
+        [heading]: null, // Clear error message initially
+      }));
+    }
+  };
+
+  const handleInputFocus = (heading, value) => {
+    if (!editMode) {
+      let errorMessage = null;
+
+      // Retrieve data type for the current heading
+      const headingIndex = formData.headings.indexOf(heading);
+      const dataType = formData.headingsDataType[headingIndex];
+
+      // Perform data type validation
+      if (dataType === "number" && isNaN(Number(value))) {
+        errorMessage = `Invalid input. Please enter a number for ${heading}.`;
+      } else if (dataType === "text" && !/^[a-zA-Z\s]*$/.test(value.trim())) {
+        errorMessage = `Invalid input. ${heading} should contain only alphabetic characters and whitespace.`;
+      } else if (dataType === "string" && typeof value !== "string") {
+        errorMessage = `Invalid input. ${heading} should be a string.`;
+      }
+
       // Set the error message for the input field
       setInputErrors((prevErrors) => ({
         ...prevErrors,
@@ -59,8 +81,6 @@ const SingleForm = () => {
       }));
     }
   };
-  
-  
 
   const handleTemplateNameChange = (e) => {
     setFormData((prevData) => ({
@@ -72,31 +92,33 @@ const SingleForm = () => {
   const navigate = useNavigate();
 
   const handleSubmitForm = async () => {
-  try {
-    // Check if any input field is empty in any row
-    const hasEmptyFields = Object.keys(inputValues).some((key) => {
-      const value = inputValues[key];
-      return value.trim() === "";
-    });
+    try {
+      // Initialize grouped input values
+      const groupedInputValues = {};
 
-    if (hasEmptyFields) {
-      // Display popup if there are errors
-      setShowPopup(true);
-      return;
-    }
+      // Initialize flag to track if there are invalid inputs
+      let hasInvalidInputs = false;
 
-    // Initialize grouped input values
-    const groupedInputValues = {};
+      // Initialize flag to track if any input field is empty
+      let isEmptyInput = false;
 
-    // Iterate through each row index
-    for (let i = 0; i < formData.rows.length; i++) {
-      // Check if all input fields in this row are filled out
-      const isRowComplete = formData.headings.every((heading, index) => {
-        const value = inputValues[`${heading}-${i}`];
-        return value.trim() !== ""; // Check if the value is not empty
-      });
+      // Iterate through each row index
+      for (let i = 0; i < formData.rows.length; i++) {
+        // Check if all input fields in this row are filled out
+        const isRowComplete = formData.headings.every((heading, index) => {
+          const value = inputValues[`${heading}-${i}`];
+          if (value.trim() === "") {
+            isEmptyInput = true;
+          }
+          return value.trim() !== ""; // Check if the value is not empty
+        });
 
-      if (isRowComplete) {
+        if (!isRowComplete) {
+          // Show error message and return if any row has empty input
+          alert("Please fill out all the input fields.");
+          return;
+        }
+
         // Initialize an object to hold input values for the current row
         const rowValues = {};
 
@@ -107,11 +129,23 @@ const SingleForm = () => {
 
           // Validate data type for the column
           if (dataType === "number" && isNaN(Number(value))) {
-            throw new Error(`Invalid value for column ${heading}: ${value} is not a number.`);
+            setInputErrors((prevErrors) => ({
+              ...prevErrors,
+              [`${heading}-${i}`]: `Invalid input. Please enter a number for ${heading}.`,
+            }));
+            hasInvalidInputs = true;
           } else if (dataType === "text" && !/^[a-zA-Z]+$/.test(value.trim())) {
-            throw new Error(`Invalid value for column ${heading}: ${value} contains non-alphabetic characters.`);
+            setInputErrors((prevErrors) => ({
+              ...prevErrors,
+              [`${heading}-${i}`]: `Invalid input. ${heading} should contain only alphabetic characters.`,
+            }));
+            hasInvalidInputs = true;
           } else if (dataType === "string" && typeof value !== "string") {
-            throw new Error(`Invalid value for column ${heading}: ${value} is not a string.`);
+            setInputErrors((prevErrors) => ({
+              ...prevErrors,
+              [`${heading}-${i}`]: `Invalid input. ${heading} should be a string.`,
+            }));
+            hasInvalidInputs = true;
           }
 
           rowValues[heading] = value;
@@ -120,39 +154,60 @@ const SingleForm = () => {
         // Add the current row to grouped input values
         groupedInputValues[i] = rowValues;
       }
+
+      // If there are invalid inputs, show red input boxes with error messages
+      if (hasInvalidInputs) {
+        // Prevent form submission
+        return;
+      }
+
+      // Convert grouped input values to an array
+      const rows = Object.values(groupedInputValues);
+
+      const response = await axios.post("http://localhost:5000/application", {
+        formId,
+        templateName: formData.templateName,
+        inputValues: {
+          headings: formData.headings,
+          headingsDataType: formData.headingsDataType, // Include headingsDataType
+          rows,
+        },
+      });
+
+      console.log("Form submitted successfully:", response.data);
+
+      navigate("/allForms");
+    } catch (error) {
+      console.error("Error submitting form:", error.message);
     }
+  };
 
-    // Convert grouped input values to an array
-    const rows = Object.values(groupedInputValues);
-
-    const response = await axios.post("http://localhost:5000/application", {
-      formId,
-      templateName: formData.templateName,
-      inputValues: {
-        headings: formData.headings,
-        rows,
-      },
-    });
-
-    console.log("Form submitted successfully:", response.data);
-
-    navigate("/allForms");
-  } catch (error) {
-    console.error("Error submitting form:", error.message);
-  }
-};
-
-  
-  
-  
-  
+  const handleDataTypeChange = (e) => {
+    setSelectedDataType(e.target.value);
+  };
 
   const addHeading = () => {
-    setFormData((prevData) => ({
-      ...prevData,
-      headings: [...prevData.headings, newHeading],
-    }));
-    setNewHeading("");
+    if (newHeading.trim() !== "") {
+      const updatedRows = formData.rows.map((row, rowIndex) => {
+        const updatedRow = { ...row };
+        // Copy data from the previous row if it exists
+        const previousRow = formData.rows[rowIndex - 1];
+        if (previousRow) {
+          updatedRow[newHeading] = previousRow[newHeading] || "";
+        } else {
+          updatedRow[newHeading] = ""; // If no previous row exists, set it to an empty string
+        }
+        return updatedRow;
+      });
+
+      setFormData((prevData) => ({
+        ...prevData,
+        headings: [...prevData.headings, newHeading],
+        headingsDataType: [...prevData.headingsDataType, selectedDataType], // Add selected data type
+        rows: updatedRows, // Update rows with the new heading
+      }));
+      setNewHeading("");
+    }
   };
 
   const addRow = () => {
@@ -170,10 +225,27 @@ const SingleForm = () => {
   };
 
   const removeHeading = (index) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      headings: prevData.headings.filter((_, i) => i !== index),
-    }));
+    setFormData((prevData) => {
+      const updatedHeadings = [...prevData.headings];
+      updatedHeadings.splice(index, 1);
+
+      const updatedHeadingsDataType = [...prevData.headingsDataType];
+      updatedHeadingsDataType.splice(index, 1);
+
+      // Remove the column corresponding to the removed heading from each row
+      const updatedRows = prevData.rows.map((row) => {
+        const updatedRow = { ...row };
+        delete updatedRow[prevData.headings[index]];
+        return updatedRow;
+      });
+
+      return {
+        ...prevData,
+        headings: updatedHeadings,
+        headingsDataType: updatedHeadingsDataType,
+        rows: updatedRows,
+      };
+    });
   };
 
   const saveTemplate = async () => {
@@ -266,11 +338,21 @@ const SingleForm = () => {
                     type="text"
                     value={inputValues[`${heading}-${rowIndex}`] || ""}
                     placeholder={heading}
-                    className="w-full border rounded px-1 py-1 my-1 text-sm border-blue-500"
+                    className={`w-full border rounded px-1 py-1 my-1 text-sm ${
+                      inputErrors[`${heading}-${rowIndex}`]
+                        ? "border-red-500"
+                        : "border-blue-500"
+                    }`}
                     onChange={(e) =>
                       handleInputChange(
                         `${heading}-${rowIndex}`,
                         e.target.value
+                      )
+                    }
+                    onFocus={() =>
+                      handleInputFocus(
+                        `${heading}-${rowIndex}`,
+                        inputValues[`${heading}-${rowIndex}`] || ""
                       )
                     }
                     readOnly={editMode}
@@ -300,6 +382,15 @@ const SingleForm = () => {
                 placeholder="New Heading"
                 className="border rounded px-2 py-1 text-sm border-blue-500"
               />
+              <select
+                value={selectedDataType}
+                onChange={handleDataTypeChange}
+                className="border rounded px-2 py-1 ml-2 text-sm border-blue-500"
+              >
+                <option value="text">Text</option>
+                <option value="number">Number</option>
+                <option value="string">String</option>
+              </select>
               <button
                 type="button"
                 className="bg-blue-500 text-white px-4 py-2 rounded ml-2 hover:bg-blue-600 transition-transform transform hover:scale-105"
