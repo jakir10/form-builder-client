@@ -7,10 +7,10 @@ const Home = () => {
       {/* Hero Section */}
       <div className="bg-blue-500 text-white py-12">
         <div className="container mx-auto text-center">
-          <h1 className="text-4xl font-bold mb-4">
+          <h1 className="text-4xl font-bold mb-4 animate__animated animate__lightSpeedInLeft">
             Build Your Custom Forms with Ease!
           </h1>
-          <p className="text-lg">
+          <p className="text-lg animate__animated animate__lightSpeedInRight">
             Create personalized forms effortlessly using our dynamic form
             builder.
           </p>

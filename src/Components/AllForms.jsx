@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import 'animate.css';
 
 const AllForms = () => {
   const [submissions, setSubmissions] = useState([]);
@@ -47,11 +48,11 @@ const AllForms = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8 ">
       {submissions.map((submission) => (
         <div
           key={submission._id}
-          className="bg-white rounded-lg overflow-hidden shadow-md transition-transform transform hover:scale-105 border-2"
+          className="bg-white rounded-lg overflow-hidden shadow-md transition-transform transform hover:scale-105 border-2 animate__animated animate__flipInX"
         >
           <div className="p-6">
             <h3 className="text-lg text-sky-500 font-semibold mb-2">

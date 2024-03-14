@@ -8,6 +8,7 @@ import "jspdf-autotable";
 import phone from "../assets/phone.png";
 import email from "../assets/email.png";
 import gps from "../assets/gps.png";
+import 'animate.css';
 
 const SingleApplications = () => {
   const { applicationId } = useParams();
@@ -24,6 +25,60 @@ const SingleApplications = () => {
   const [newHeading, setNewHeading] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [invalidInputs, setInvalidInputs] = useState({});
+  // const [editAllRows, setEditAllRows] = useState(false);
+  const [newRows, setNewRows] = useState([]);
+  const [editRow, setEditRow] = useState([]);
+
+  const handleEditAllRows = () => {
+    setEditRow(new Array(rows.length).fill(true));
+  };
+
+  const handleRowInputChange = (rowIndex, heading, value) => {
+    // Retrieve the expected data type for the current heading
+    const expectedDataType = applicationData.inputValues.headingsDataType.find(
+      (dataType, index) =>
+        applicationData.inputValues.headings[index] === heading
+    );
+
+    // Validate the input data type
+    let isValid = true;
+    let errorMessage = "";
+
+    if (expectedDataType === "number") {
+      isValid = /^[0-9]+(\.[0-9]+)?$/.test(value); // Only numeric characters allowed
+      errorMessage = "Only numeric characters allowed";
+    } else if (expectedDataType === "text") {
+      isValid = /^[A-Za-z\s]+$/.test(value); // Alphabet characters and white spaces allowed
+      errorMessage = "Only alphabet characters allowed";
+    } else if (expectedDataType === "string") {
+      // No specific validation for string type
+    }
+
+    // Update the invalidInputs state based on the validation result for this specific field
+    setInvalidInputs((prevInvalidInputs) => ({
+      ...prevInvalidInputs,
+      [rowIndex]: {
+        ...prevInvalidInputs[rowIndex],
+        [heading]: isValid ? "" : errorMessage,
+      },
+    }));
+
+    // Update the row data
+    setApplicationData((prevData) => {
+      const updatedRows = [...prevData.inputValues.rows];
+      updatedRows[rowIndex] = {
+        ...updatedRows[rowIndex],
+        [heading]: value,
+      };
+      return {
+        ...prevData,
+        inputValues: {
+          ...prevData.inputValues,
+          rows: updatedRows,
+        },
+      };
+    });
+  };
 
   // const [headingsDataType, setHeadingsDataType] = useState({});
   const [selectedDataType, setSelectedDataType] = useState("text");
@@ -67,7 +122,7 @@ const SingleApplications = () => {
     setIsEditing(true);
   };
 
-  const handleInputChange = (heading, value) => {
+  const handleInputChange = (heading, value, rowIndex) => {
     // Retrieve the expected data type for the current heading
     const expectedDataType = applicationData.inputValues.headingsDataType.find(
       (dataType, index) =>
@@ -93,6 +148,14 @@ const SingleApplications = () => {
       ...prevRow,
       [heading]: value,
     }));
+    setNewRows((prevRows) => {
+      const updatedRows = [...prevRows];
+      updatedRows[rowIndex] = {
+        ...updatedRows[rowIndex],
+        [heading]: value,
+      };
+      return updatedRows;
+    });
 
     // Update the invalidInputs state based on the validation result
     setInvalidInputs((prevInvalidInputs) => ({
@@ -406,6 +469,7 @@ const SingleApplications = () => {
 
       alert("Data saved successfully!");
       setIsEditing(false);
+      window.location.reload();
     } catch (error) {
       console.error("Error saving data:", error.message);
       alert("Error saving data. Please try again.");
@@ -692,10 +756,10 @@ const SingleApplications = () => {
 
   return (
     <div className="container mx-auto mt-8 bg-gray-100 p-8 rounded-lg">
-      <h1 className="text-4xl text-center font-bold mb-6 text-indigo-600">
+      <h1 className="text-4xl text-center font-bold mb-6 text-indigo-600 animate__animated animate__fadeInDownBig">
         {applicationData.templateName} Form
       </h1>
-      <table className="table-auto w-full border-collapse border border-gray-800 bg-white shadow-md">
+      <table className="table-auto w-full border-collapse border border-gray-800 bg-white shadow-md animate__animated  animate__fadeInRightBig">
         <thead>
           <tr className="bg-indigo-500 text-white">
             <th className="border px-4 py-2 w-20">Sl No</th>
@@ -703,16 +767,18 @@ const SingleApplications = () => {
               headings.map((heading, index) => (
                 <th
                   key={index}
-                  className="border px-4 py-2 capitalize text-center"
+                  // className="border px-4 py-2 capitalize text-center"
+                  className="border px-4 py-2 capitalize text-center animate__animated animate__fadeIn"
                 >
                   {heading}
                   {isEditing && (
                     <>
+                    <div className="flex pt-2  justify-between">
                       <button
-                        className="text-red-600 hover:text-red-500 ml-1 transform hover:scale-125"
+                        className="text-red-600 hover:text-red-500  transform hover:scale-125"
                         onClick={() => handleRemoveHeadingClick(index)}
                       >
-                        &#10005; Remove
+                        &#10005; 
                       </button>
                       <br />
                       <button
@@ -731,6 +797,7 @@ const SingleApplications = () => {
                       >
                         &#9998; Edit
                       </button>
+                      </div>
                     </>
                   )}
                 </th>
@@ -738,6 +805,7 @@ const SingleApplications = () => {
 
             {isEditing && (
               <th className="border px-4 py-2 text-center">
+                <div className="flex space-x-2">
                 <input
                   type="text"
                   value={newHeading}
@@ -754,6 +822,7 @@ const SingleApplications = () => {
                   <option value="number">Number</option>
                   <option value="string">String</option>
                 </select>
+                </div>
                 <button
                   className="text-white hover:text-green-400 ml-1 transform hover:scale-105"
                   onClick={handleAddHeadingClick}
@@ -763,9 +832,9 @@ const SingleApplications = () => {
               </th>
             )}
 
-            {isEditing && (
+            {/* {isEditing && (
               <th className="border px-4 py-2 text-center">Actions</th>
-            )}
+            )} */}
           </tr>
         </thead>
         <tbody>
@@ -779,9 +848,40 @@ const SingleApplications = () => {
               <td className="border px-4 py-2 text-center">{rowIndex + 1}</td>
               {headings.map((heading, headingIndex) => (
                 <td key={headingIndex} className="border px-4 py-2 text-center">
-                  {row[heading]}
+                  {editRow[rowIndex] ? (
+                    <div>
+                      <input
+                        value={
+                          applicationData.inputValues.rows[rowIndex][heading]
+                        }
+                        placeholder={heading}
+                        onChange={(e) =>
+                          handleRowInputChange(
+                            rowIndex,
+                            heading,
+                            e.target.value
+                          )
+                        }
+                        className={`w-full border rounded px-1 py-1 my-1 text-sm border-blue-500 ${
+                          invalidInputs[rowIndex] &&
+                          invalidInputs[rowIndex][heading]
+                            ? "border-red-500"
+                            : ""
+                        }`}
+                      />
+                      {invalidInputs[rowIndex] &&
+                        invalidInputs[rowIndex][heading] && (
+                          <span className="text-red-500 text-sm ml-1">
+                            {invalidInputs[rowIndex][heading]}
+                          </span>
+                        )}
+                    </div>
+                  ) : (
+                    row[heading]
+                  )}
                 </td>
               ))}
+
               {isEditing && (
                 <td className="border px-4 py-2 text-center">
                   <button
@@ -881,6 +981,14 @@ const SingleApplications = () => {
             >
               Save
             </button>
+            {isEditing && (
+              <button
+                className="px-6 py-2 ml-2 bg-orange-600 hover:bg-orange-500 text-white transition-transform transform hover:scale-105"
+                onClick={handleEditAllRows} // Call handleEditAllRows function on button click
+              >
+                Edit
+              </button>
+            )}
             <label className="px-4 py-2 ml-2 bg-green-700 hover:bg-green-600 text-white cursor-pointer transition-transform transform hover:scale-105">
               Import Excel
               <input
